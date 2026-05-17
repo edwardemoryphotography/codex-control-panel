@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from '../page'
 
 describe('Home page', () => {
@@ -35,62 +35,66 @@ describe('Home page', () => {
     expect(screen.getByRole('button', { name: 'Fast Execute Here' })).toBeDisabled()
   })
 
-  it('applies selected styles to a chip on click', () => {
+  it('marks a chip as pressed on click', () => {
     render(<Home />)
     const chip = screen.getByText('Execute now')
     fireEvent.click(chip)
-    expect(chip).toHaveClass('bg-neutral-100')
+    expect(chip).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('deselects a chip when clicked again', () => {
+  it('unpresses a chip when clicked again', () => {
     render(<Home />)
     const chip = screen.getByText('Execute now')
     fireEvent.click(chip)
     fireEvent.click(chip)
-    expect(chip).not.toHaveClass('bg-neutral-100')
+    expect(chip).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('selecting a new chip deselects the previous one', () => {
+  it('selecting a new chip unpresses the previous one', () => {
     render(<Home />)
     const executeChip = screen.getByText('Execute now')
     const shipChip = screen.getByText('Ship it')
     fireEvent.click(executeChip)
     fireEvent.click(shipChip)
-    expect(executeChip).not.toHaveClass('bg-neutral-100')
-    expect(shipChip).toHaveClass('bg-neutral-100')
+    expect(executeChip).toHaveAttribute('aria-pressed', 'false')
+    expect(shipChip).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('Route Task alert includes the selected chip id and task', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
-    render(<Home />)
-    fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
-      target: { value: 'My task' },
+  describe('alert behavior', () => {
+    beforeEach(() => {
+      vi.spyOn(window, 'alert').mockImplementation(() => {})
     })
-    fireEvent.click(screen.getByText('Ship it'))
-    fireEvent.click(screen.getByRole('button', { name: 'Route Task' }))
-    expect(alertSpy).toHaveBeenCalledWith('Routed: ship\n\nMy task')
-    alertSpy.mockRestore()
-  })
 
-  it('Route Task alert uses "auto" when no chip is selected', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
-    render(<Home />)
-    fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
-      target: { value: 'My task' },
+    afterEach(() => {
+      vi.restoreAllMocks()
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Route Task' }))
-    expect(alertSpy).toHaveBeenCalledWith('Routed: auto\n\nMy task')
-    alertSpy.mockRestore()
-  })
 
-  it('Fast Execute alert shows the task text', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
-    render(<Home />)
-    fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
-      target: { value: 'Quick task' },
+    it('Route Task alert includes the selected chip id and task', () => {
+      render(<Home />)
+      fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
+        target: { value: 'My task' },
+      })
+      fireEvent.click(screen.getByText('Ship it'))
+      fireEvent.click(screen.getByRole('button', { name: 'Route Task' }))
+      expect(window.alert).toHaveBeenCalledWith('Routed: ship\n\nMy task')
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Fast Execute Here' }))
-    expect(alertSpy).toHaveBeenCalledWith('Executing here:\n\nQuick task')
-    alertSpy.mockRestore()
+
+    it('Route Task alert uses "auto" when no chip is selected', () => {
+      render(<Home />)
+      fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
+        target: { value: 'My task' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Route Task' }))
+      expect(window.alert).toHaveBeenCalledWith('Routed: auto\n\nMy task')
+    })
+
+    it('Fast Execute alert shows the task text', () => {
+      render(<Home />)
+      fireEvent.change(screen.getByPlaceholderText('What needs to move forward?'), {
+        target: { value: 'Quick task' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Fast Execute Here' }))
+      expect(window.alert).toHaveBeenCalledWith('Executing here:\n\nQuick task')
+    })
   })
 })
