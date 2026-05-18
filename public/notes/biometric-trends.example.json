@@ -1,0 +1,11 @@
+{
+  "source": "live bridge",
+  "days": [
+    {
+      "date": "2026-05-18",
+      "sleepHours": 7.5,
+      "recoveryScore": 78,
+      "focusScore": 65
+    }
+  ]
+}
