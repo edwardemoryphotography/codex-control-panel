@@ -17,7 +17,7 @@ const DEFAULTS: Metrics = {
 const PRINCIPLES = [
   { title: '1. Artifact Anchoring', body: 'Every interaction must yield a tangible system change or file.' },
   { title: '2. Interruption Resilience', body: 'Systems must be stateless enough to survive pauses.' },
-  { title: '3. Governing Law', body: 'The system is the authority, not the user's fluctuating energy.' },
+  { title: '3. Governing Law', body: "The system is the authority, not the user's fluctuating energy." },
   { title: '4. Constraint Discipline', body: 'Prefer modifying existing infrastructure over proposing new tools.' },
 ];
 
