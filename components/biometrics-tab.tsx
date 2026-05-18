@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface DayRecord {
   date: string;
@@ -17,6 +17,18 @@ interface Summary {
   recommendation: string;
 }
 
+const WEIGHT_RECOVERY = 0.48;
+const WEIGHT_FOCUS = 0.32;
+const WEIGHT_SLEEP = 0.20;
+const SLEEP_MAX_SCORE = 100;
+const SLEEP_SCORE_FACTOR = 12;
+const SLEEP_TARGET_HOURS = 7.7;
+const SLEEP_DEBT_SCALE = 70;
+const THRESHOLD_DEEP_BUILD = 58;
+const THRESHOLD_ADMIN = 42;
+const THRESHOLD_CREATIVE_FOCUS_EDGE = 12;
+const SLEEP_FLOOR_HOURS = 6;
+
 function clamp(v: number, min: number, max: number) { return Math.min(max, Math.max(min, Math.round(v))); }
 function avg(arr: number[]) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
 
@@ -25,15 +37,20 @@ function summarize(days: DayRecord[]): Summary {
   const recovery = avg(recent.map(d => d.recoveryScore));
   const focus = avg(recent.map(d => d.focusScore));
   const sleep = avg(recent.map(d => d.sleepHours));
-  const readiness = clamp(recovery * 0.48 + focus * 0.32 + Math.min(100, sleep * 12) * 0.2, 0, 100);
-  const sleepDebt = Math.round(Math.max(0, 7.7 - sleep) * 70) / 10;
+  const readiness = clamp(
+    recovery * WEIGHT_RECOVERY +
+    focus * WEIGHT_FOCUS +
+    Math.min(SLEEP_MAX_SCORE, sleep * SLEEP_SCORE_FACTOR) * WEIGHT_SLEEP,
+    0, 100
+  );
+  const sleepDebt = Math.round(Math.max(0, SLEEP_TARGET_HOURS - sleep) * SLEEP_DEBT_SCALE) / 10;
   let mode = 'deep_build';
   let recommendation = 'Deep-build lane: architecture, implementation, and launch work are appropriate.';
-  if (readiness < 42 || sleep < 6) {
+  if (readiness < THRESHOLD_ADMIN || sleep < SLEEP_FLOOR_HOURS) {
     mode = 'recovery'; recommendation = 'Recovery lane: capture ideas, avoid irreversible architecture, protect sleep.';
-  } else if (readiness < 58) {
+  } else if (readiness < THRESHOLD_DEEP_BUILD) {
     mode = 'admin_light'; recommendation = 'Admin-light lane: triage, docs, small deploy checks, no scope expansion.';
-  } else if (focus > recovery + 12) {
+  } else if (focus > recovery + THRESHOLD_CREATIVE_FOCUS_EDGE) {
     mode = 'creative_edit'; recommendation = 'Creative edit lane: shape assets and workshop material, avoid heavy refactors.';
   }
   return { readiness, recovery: clamp(recovery, 0, 100), focus: clamp(focus, 0, 100), sleepDebt, mode, recommendation };
@@ -42,33 +59,37 @@ function summarize(days: DayRecord[]): Summary {
 export default function BiometricsTab() {
   const [state, setState] = useState<{ days: DayRecord[]; source: string; error: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const svgRef = useRef<SVGSVGElement>(null);
 
-  const TREND_URL = '/notes/biometric-trends.json';
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(TREND_URL, { cache: 'no-store' });
+      const res = await fetch('/notes/biometric-trends.json', { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.text();
       if (!raw.trim()) throw new Error('File is empty.');
-      const parsed = JSON.parse(raw);
-      const candidate: DayRecord[] = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.days) ? parsed.days : []);
+      const parsed: unknown = JSON.parse(raw);
+      const candidate: DayRecord[] = Array.isArray(parsed)
+        ? parsed
+        : (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).days)
+          ? (parsed as Record<string, unknown>).days as DayRecord[]
+          : []);
       const days = candidate.filter(d =>
         d && typeof d.date === 'string' &&
         isFinite(Number(d.sleepHours)) && isFinite(Number(d.recoveryScore)) && isFinite(Number(d.focusScore))
       ).slice(-30);
       if (!days.length) throw new Error('No valid day records.');
-      setState({ days, source: parsed.source ?? 'live bridge', error: '' });
+      const source = parsed && typeof parsed === 'object' && typeof (parsed as Record<string, unknown>).source === 'string'
+        ? (parsed as Record<string, unknown>).source as string
+        : 'live bridge';
+      setState({ days, source, error: '' });
     } catch (e: unknown) {
       setState({ days: [], source: '', error: e instanceof Error ? e.message : String(e) });
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const summary = state?.days.length ? summarize(state.days) : null;
 
@@ -103,7 +124,7 @@ export default function BiometricsTab() {
             {summary ? summary.readiness : '—'}
           </div>
           <p style={{ color: 'var(--text-soft)', fontSize: '0.88rem', lineHeight: 1.55 }}>
-            {summary ? summary.recommendation : 'Biometric data required. Connect a live bridge (WHOOP / Muse / Apple Health) that writes real values to notes/biometric-trends.json. No mock or sample data will be shown.'}
+            {summary ? summary.recommendation : 'Biometric data required. Connect a live bridge (WHOOP / Muse / Apple Health) that writes real values to public/notes/biometric-trends.json. No mock or sample data will be shown.'}
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
@@ -126,7 +147,7 @@ export default function BiometricsTab() {
             {loading ? 'Loading…' : 'Reload live data'}
           </button>
         </div>
-        <svg ref={svgRef} viewBox="0 0 720 220" style={{ width: '100%', height: '220px', overflow: 'visible' }} role="img" aria-label="30-day biometric trend chart">
+        <svg viewBox="0 0 720 220" style={{ width: '100%', height: '220px', overflow: 'visible' }} role="img" aria-label="30-day biometric trend chart">
           {state?.days.length ? (
             [['recoveryScore', 'var(--success)', 100], ['focusScore', 'var(--teal)', 100], ['sleepHours', 'var(--amber)', 10]].map(([key, color, maxV]) => {
               const values = state.days.map(d => Number(d[key as keyof DayRecord]));
@@ -139,7 +160,7 @@ export default function BiometricsTab() {
               return <path key={String(key)} d={pts} fill="none" stroke={String(color)} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />;
             })
           ) : (
-            <text x="360" y="110" textAnchor="middle" fill="var(--text-dim)" fontSize="14">No live data</text>
+            <text x="360" y="110" textAnchor="middle" fill="var(--text-dim)" fontSize="14">No live data — connect a bridge to render chart</text>
           )}
         </svg>
         <p style={{ color: 'var(--text-soft)', fontSize: '0.88rem', marginTop: '12px' }}>
@@ -153,7 +174,7 @@ export default function BiometricsTab() {
           {summary ? `${summary.recommendation} This should inform task ranking before prompts are sent to build agents.` : 'No live biometric data. The governor is abstaining — no readiness score, no lane recommendation.'}
         </p>
         <p style={{ color: 'var(--text-soft)', fontSize: '0.88rem', marginTop: '12px' }}>
-          Live bridge target: write normalized metrics to <code>notes/biometric-trends.json</code>. This dashboard has no mock, fixture, sample, or fallback values.
+          Live bridge target: write normalized metrics to <code>public/notes/biometric-trends.json</code>. This dashboard has no mock, fixture, sample, or fallback values.
         </p>
       </article>
     </div>

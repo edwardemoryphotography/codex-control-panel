@@ -58,22 +58,28 @@ export default function Home() {
         ))}
       </div>
 
-      <nav style={{
-        position: 'fixed',
-        left: 0, right: 0, bottom: 0,
-        zIndex: 1000,
-        borderTop: '1px solid var(--line-strong)',
-        background: 'rgba(10, 10, 15, 0.96)',
-        backdropFilter: 'blur(8px)',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        gap: '4px',
-        padding: '8px',
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
-      }}>
+      <nav
+        role="tablist"
+        aria-label="Legacy Codex navigation"
+        style={{
+          position: 'fixed',
+          left: 0, right: 0, bottom: 0,
+          zIndex: 1000,
+          borderTop: '1px solid var(--line-strong)',
+          background: 'rgba(10, 10, 15, 0.96)',
+          backdropFilter: 'blur(8px)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: '4px',
+          padding: '8px',
+          paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         {TABS.map(tab => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
               border: activeTab === tab.id ? '1px solid var(--teal)' : '1px solid transparent',

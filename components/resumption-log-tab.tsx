@@ -21,6 +21,10 @@ export default function ResumptionLogTab() {
 
   async function copy() {
     if (!log) { setCopyStatus('Clipboard status: no log text yet.'); return; }
+    if (!navigator.clipboard) {
+      setCopyStatus('Clipboard status: clipboard API not available in this context.');
+      return;
+    }
     try {
       await navigator.clipboard.writeText(log);
       setCopyStatus('Clipboard status: copied successfully.');
