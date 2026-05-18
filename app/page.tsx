@@ -78,8 +78,10 @@ export default function Home() {
         {TABS.map(tab => (
           <button
             key={tab.id}
+            id={`tab-${tab.id}`}
             role="tab"
             aria-selected={activeTab === tab.id}
+            aria-controls="tabpanel-content"
             onClick={() => setActiveTab(tab.id)}
             style={{
               border: activeTab === tab.id ? '1px solid var(--teal)' : '1px solid transparent',
@@ -98,7 +100,11 @@ export default function Home() {
         ))}
       </nav>
 
-      <main>
+      <main
+        id="tabpanel-content"
+        role="tabpanel"
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'protocols' && <ProtocolsTab />}
         {activeTab === 'sprint-linker' && <SprintLinkerTab />}

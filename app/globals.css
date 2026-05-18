@@ -53,7 +53,7 @@ textarea {
   width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: #0f0f18;
+  background: var(--surface);
   color: var(--text);
   padding: 11px 12px;
   min-height: 44px;
