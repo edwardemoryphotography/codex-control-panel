@@ -34,6 +34,7 @@ export default function Home() {
           {CHIPS.map((c) => (
             <button
               key={c.id}
+              aria-pressed={chip === c.id}
               onClick={() => setChip(chip === c.id ? null : c.id)}
               className={`px-3 py-1.5 rounded-full text-sm border transition ${
                 chip === c.id
