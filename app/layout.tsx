@@ -1,15 +1,31 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: 'Legacy Codex',
-  description: 'Legacy Codex v17 — Edward Emory Photography operational dashboard',
-  other: { 'theme-color': '#0a0a0f' },
+  title: "Codex Control Panel",
+  description:
+    "Mobile-first AI dispatcher for Codex task orchestration. Route, run, and learn.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" className={inter.variable}>
       <body>{children}</body>
     </html>
   );
