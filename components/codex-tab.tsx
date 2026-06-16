@@ -20,7 +20,7 @@ const SECTIONS = [
     entries: [
       { label: 'The Architect', content: 'Designs system structure, sets constraints, evaluates tool proposals against the Tech Stack Mandate. Authority: Sony/Apple/Muse/Docker only.' },
       { label: 'The Executor', content: 'Produces artifacts, ships code, triggers deployments. Operates under Artifact Anchoring — every turn yields a tangible system change.' },
-      { label: 'The Guardian', content: 'Enforces protocol compliance, gates quality, triggers Failure Validation when Edward says "doesn\'t work". Runs the 5-step debug checklist.' },
+      { label: 'The Guardian', content: "Enforces protocol compliance, gates quality, triggers Failure Validation when Edward says \"doesn't work\". Runs the 5-step debug checklist." },
       { label: 'Weekly Protocol', content: 'Review all open deficits. Run constraint validator on top 3 active tasks. Update Resumption Log before session close.' },
     ],
   },

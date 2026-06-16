@@ -4,7 +4,6 @@ import { useState } from 'react';
 const CHECKS = [
   {
     name: 'Artifact Anchoring',
-    terms: ['file', 'repo', 'commit', 'deploy', 'url', 'dashboard', 'html', 'markdown', 'doc', 'publish', 'ship', 'build', 'export', 'artifact'],
     pass: (t: string) => ['file','repo','commit','deploy','url','dashboard','html','markdown','doc','publish','ship','build','export','artifact'].some(w => t.includes(w)),
     passReason: 'Concrete artifact/system language is present.',
     failReason: 'No concrete artifact or system deliverable is named.',

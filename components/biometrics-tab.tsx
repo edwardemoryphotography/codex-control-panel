@@ -73,10 +73,18 @@ export default function BiometricsTab() {
         : (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).days)
           ? (parsed as Record<string, unknown>).days as DayRecord[]
           : []);
-      const days = candidate.filter(d =>
-        d && typeof d.date === 'string' &&
-        isFinite(Number(d.sleepHours)) && isFinite(Number(d.recoveryScore)) && isFinite(Number(d.focusScore))
-      ).slice(-30);
+      const days = candidate
+        .filter(d =>
+          d && typeof d.date === 'string' &&
+          isFinite(Number(d.sleepHours)) && isFinite(Number(d.recoveryScore)) && isFinite(Number(d.focusScore))
+        )
+        .map(d => ({
+          date: d.date,
+          sleepHours: Number(d.sleepHours),
+          recoveryScore: Number(d.recoveryScore),
+          focusScore: Number(d.focusScore),
+        }))
+        .slice(-30);
       if (!days.length) throw new Error('No valid day records.');
       const source = parsed && typeof parsed === 'object' && typeof (parsed as Record<string, unknown>).source === 'string'
         ? (parsed as Record<string, unknown>).source as string
