@@ -520,7 +520,7 @@ export default function ControlPanel() {
               <div className="strength-bar">
                 <i
                   id="strengthFill"
-                  style={{ width: `${summary?.strength ?? 0}%` }}
+                  style={{ transform: `scaleX(${(summary?.strength ?? 0) / 100})` }}
                 />
               </div>
             </div>

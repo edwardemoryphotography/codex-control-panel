@@ -543,9 +543,11 @@ a {
 .strength-bar > i {
   display: block;
   height: 100%;
+  width: 100%;
   background: var(--color-primary);
-  width: 0;
-  transition: width 0.4s ease;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.4s ease-out;
 }
 
 .sr-only {
