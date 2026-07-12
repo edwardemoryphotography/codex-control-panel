@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let cachedServiceClient: SupabaseClient | null = null;
+let cachedAnonClient: SupabaseClient | null = null;
 
 /**
  * Server-only Supabase client for the Foundry backend. Uses the service-role
@@ -22,4 +23,17 @@ export function getSupabaseServiceClient(): SupabaseClient | null {
   }
 
   return cachedServiceClient;
+}
+
+export function getSupabaseServerClient(): SupabaseClient | null {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) return null;
+
+  if (!cachedAnonClient) {
+    cachedAnonClient = createClient(url, anonKey);
+  }
+
+  return cachedAnonClient;
 }

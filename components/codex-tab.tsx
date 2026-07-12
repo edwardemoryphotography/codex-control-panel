@@ -30,7 +30,7 @@ const SECTIONS = [
     color: 'var(--teal)',
     entries: [
       { label: 'Boot Sequence', content: '1. Load Canonical Principles → 2. Check Validation Metrics → 3. Review open Protocols → 4. Confirm Deployment Status → 5. Resume last artifact.' },
-      { label: 'Current Ledger', content: 'Repo: edwardemoryphotography/legacy-codex (GitHub Pages). Control Panel: edwardemoryphotography/codex-control-panel (Vercel). Foundry Console: Supabase-backed ops dashboard.' },
+      { label: 'Current Ledger', content: 'Repo: edwardemoryphotography/legacy-codex (Vercel — legacy-codex.vercel.app). Control Panel: edwardemoryphotography/codex-control-panel (Vercel). Foundry Console: Supabase-backed ops dashboard.' },
       { label: 'Open Deficits', content: 'RESOLVED: system persistence. FAIL: v1-v16 version history unrecovered. OPEN: tab count discrepancy under investigation.' },
     ],
   },
