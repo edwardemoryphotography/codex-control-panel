@@ -235,14 +235,21 @@ export default function ControlPanel() {
     setActionsStatus("Loading next actions…");
 
     fetch(`/api/actions?mode=${sessionMode}`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          let message = `Server error: ${res.status}`;
+          try {
+            const errorData = await res.json();
+            if (errorData?.error) message = errorData.error;
+          } catch {
+            // response body wasn't JSON; keep the status-based message
+          }
+          throw new Error(message);
+        }
+        return res.json();
+      })
       .then((data: { actions?: ActionRow[]; error?: string }) => {
         if (cancelled) return;
-        if (data.error) {
-          setNextActions(null);
-          setActionsStatus(data.error);
-          return;
-        }
         setNextActions(data.actions ?? []);
         setActionsStatus(data.actions?.length ? "" : "No actions returned.");
       })

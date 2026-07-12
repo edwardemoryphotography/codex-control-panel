@@ -19,13 +19,20 @@ export async function GET(request: Request) {
     );
   }
 
-  const { data, error } = await supabase.rpc("initialize_session_start", {
-    session_mode: sessionMode,
-  });
+  try {
+    const { data, error } = await supabase.rpc("initialize_session_start", {
+      session_mode: sessionMode,
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 502 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 502 });
+    }
+
+    return NextResponse.json({ actions: data ?? [] });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Internal Server Error" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ actions: data ?? [] });
 }
