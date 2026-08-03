@@ -39,6 +39,7 @@ export default function ProtocolsTab() {
       const raw = localStorage.getItem(DEPLOY_KEY);
       if (raw) {
         const p = JSON.parse(raw);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted state after mount
         if (p.localFile) setLocalFile(p.localFile);
         if (p.repo) setRepo(p.repo);
         if (p.url) setUrl(p.url);
@@ -87,7 +88,7 @@ export default function ProtocolsTab() {
       <article style={{ ...card, marginTop: '16px' }}>
         <h3 style={{ ...cardTitle }}>Convergence Event</h3>
         <p><strong>Map→Territory Collapse — 2025-11-30</strong></p>
-        <p style={{ color: 'var(--text-soft)', fontSize: '0.9rem', marginTop: '4px' }}>"The irreversible shift from planning how to work to the work being the system."</p>
+        <p style={{ color: 'var(--text-soft)', fontSize: '0.9rem', marginTop: '4px' }}>&ldquo;The irreversible shift from planning how to work to the work being the system.&rdquo;</p>
       </article>
 
       <article style={{ ...card, marginTop: '12px' }}>

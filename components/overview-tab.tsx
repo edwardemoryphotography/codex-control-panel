@@ -33,6 +33,7 @@ export default function OverviewTab() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem('codex_v17_metrics');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted state after mount
       if (stored) setMetrics({ ...DEFAULTS, ...JSON.parse(stored) });
     } catch {}
   }, []);
