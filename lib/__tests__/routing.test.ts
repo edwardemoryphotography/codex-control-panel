@@ -46,6 +46,11 @@ describe('buildResult (doctrine fallback)', () => {
     expect(result.source).toBe('doctrine')
   })
 
+  it('assigns every result a task id', () => {
+    const result = buildResult(input())
+    expect(result.id).toMatch(/^T-/)
+  })
+
   it('routes to architecture when nothing matches', () => {
     const result = buildResult(input({ task: 'zzzz qqqq', overrideEnabled: false }))
     expect(result.primaryKey).toBe('architecture')
@@ -117,6 +122,21 @@ describe('buildResultFromDecision', () => {
     expect(result.strength).toBe(90)
     expect(result.source).toBe('Claude')
     expect(result.prompts[0].prompt).toContain('Deployment operator')
+  })
+
+  it('records the deciding model when provided', () => {
+    const result = buildResultFromDecision(
+      input(),
+      {
+        routes: [{ key: 'execution', reason: '' }],
+        override: { active: false, reason: '' },
+        strength: 80,
+      },
+      'Claude',
+      'claude-sonnet-4-6',
+    )
+    expect(result.model).toBe('claude-sonnet-4-6')
+    expect(result.id).toMatch(/^T-/)
   })
 
   it('builds a hybrid result when the AI returns two routes', () => {

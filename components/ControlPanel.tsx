@@ -321,6 +321,7 @@ export default function ControlPanel() {
       const data = (await response.json()) as {
         decision?: unknown;
         provider?: string;
+        model?: string;
       };
       const decision = parseAiDecision(data.decision);
       if (!decision) throw new Error("Unusable AI decision");
@@ -328,6 +329,7 @@ export default function ControlPanel() {
         input,
         decision,
         SOURCE_LABELS[data.provider ?? ""] ?? "AI",
+        data.model,
       );
     } catch {
       // No key configured, offline, or a bad AI response — the local
@@ -780,8 +782,18 @@ export default function ControlPanel() {
             </div>
           </div>
           <div className="help" style={{ margin: ".7rem 0 0" }}>
-            Match strength = keyword overlap with the doctrine lane, not model
-            confidence.
+            {summary ? (
+              <>
+                Task <code>{summary.id ?? "—"}</code> · decided by{" "}
+                {summary.source === "doctrine"
+                  ? "local doctrine rules"
+                  : `${summary.source}${summary.model ? ` (${summary.model})` : ""}`}
+                . Routing is a recommendation — nothing runs until you execute
+                a step below.
+              </>
+            ) : (
+              "Routing produces a recommendation + prompt per step; execution only happens when you run a step."
+            )}
           </div>
           <div
             className="output-wrap"
@@ -802,12 +814,25 @@ export default function ControlPanel() {
                     : (routeByTool[item.tool]?.key ?? "architecture");
                 const runState = runStates[index];
 
+                const executionStatus = runState?.loading ? (
+                  <span className="pill warn">Executing…</span>
+                ) : runState?.text ? (
+                  <span className="pill success">
+                    Executed — evidence below
+                  </span>
+                ) : runState?.error ? (
+                  <span className="pill error">Execution failed</span>
+                ) : (
+                  <span className="pill">Not executed</span>
+                );
+
                 return (
                   <article className="output-card" key={`${item.part}-${index}`}>
                     <div className="meta">
                       <span className="pill primary">{item.part}</span>
                       <span className="pill">{item.tool}</span>
-                      <span className="pill success">{item.category}</span>
+                      <span className="pill">{item.category}</span>
+                      {executionStatus}
                     </div>
                     <h3>Selected tool: {item.tool}</h3>
                     <p>
