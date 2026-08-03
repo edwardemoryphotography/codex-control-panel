@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
-import { callLlm, hasLlmProvider } from "@/lib/llm";
-import { auditLog, clientId, rateLimit, requestId } from "@/lib/api-guard";
+import { callLlm, hasLlmProvider, isAuthFailure } from "@/lib/llm";
+import {
+  auditLog,
+  clientId,
+  rateLimit,
+  readJsonBody,
+  requireOwner,
+  requestId,
+} from "@/lib/api-guard";
 
 const MAX_PROMPT_CHARS = 12_000;
+const MAX_BODY_BYTES = 65_536;
 const RATE_LIMIT_PER_MINUTE = 10;
 
 export async function POST(request: Request) {
@@ -16,7 +24,17 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!hasLlmProvider()) {
+  const aiConfigured = hasLlmProvider();
+  const auth = requireOwner(request, aiConfigured);
+  if (!auth.ok) {
+    auditLog("run.denied", { requestId: rid, status: auth.status });
+    return NextResponse.json(
+      { error: auth.error, requestId: rid },
+      { status: auth.status },
+    );
+  }
+
+  if (!aiConfigured) {
     return NextResponse.json(
       {
         error:
@@ -27,17 +45,25 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { prompt?: string };
-  try {
-    body = (await request.json()) as { prompt?: string };
-  } catch {
+  const read = await readJsonBody(request, MAX_BODY_BYTES);
+  if (!read.ok) {
     return NextResponse.json(
-      { error: "Invalid JSON body", requestId: rid },
-      { status: 400 },
+      { error: read.error, requestId: rid },
+      { status: read.status },
     );
   }
 
-  const prompt = body.prompt?.trim();
+  const raw =
+    typeof read.value === "object" && read.value !== null
+      ? (read.value as { prompt?: unknown })
+      : {};
+  if (typeof raw.prompt !== "string") {
+    return NextResponse.json(
+      { error: "prompt must be a string", requestId: rid },
+      { status: 400 },
+    );
+  }
+  const prompt = raw.prompt.trim();
   if (!prompt) {
     return NextResponse.json(
       { error: "Prompt is required", requestId: rid },
@@ -76,13 +102,13 @@ export async function POST(request: Request) {
       requestId: rid,
     });
   } catch (error) {
-    auditLog("run.error", {
-      requestId: rid,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const detail = error instanceof Error ? error.message : String(error);
+    auditLog("run.error", { requestId: rid, error: detail });
     return NextResponse.json(
       {
-        error: "Live run failed — copy the prompt and run it manually instead.",
+        error: isAuthFailure(detail)
+          ? "The AI provider rejected the server's API key. Re-paste the key in your deployment environment (no quotes or trailing spaces), redeploy, then verify at /api/health?probe=1."
+          : "Draft generation failed — copy the prompt and run it manually instead.",
         requestId: rid,
       },
       { status: 502 },
