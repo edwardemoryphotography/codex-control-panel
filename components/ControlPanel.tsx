@@ -17,6 +17,22 @@ const HISTORY_KEY = "codex-control-panel-history-v2";
 const THEME_KEY = "codex-control-panel-theme";
 const CORRECT_KEY = "codex-control-panel-corrections-v1";
 
+const CHIP_ACCENTS: Record<RouteKey, string> = {
+  execution: "#3d8bff",
+  research: "#6a6ff5",
+  architecture: "#a259ff",
+  deployment: "#f05f9f",
+  documentation: "#ff7d54",
+  system_state: "#ffb340",
+  override: "#3d8bff",
+};
+
+const PRIORITY_OPTIONS = [
+  { value: "speed", label: "Speed" },
+  { value: "balance", label: "Balanced" },
+  { value: "accuracy", label: "Accuracy" },
+] as const;
+
 type RunState = {
   loading: boolean;
   text: string;
@@ -69,6 +85,96 @@ function getSpeechRecognitionCtor():
   return win.SpeechRecognition ?? win.webkitSpeechRecognition;
 }
 
+function SparkleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 1.5c.75 4.94 4.56 8.75 9.5 9.5v2c-4.94.75-8.75 4.56-9.5 9.5h-2c-.75-4.94-4.56-8.75-9.5-9.5v-2c4.94-.75 8.75-4.56 9.5-9.5h2z" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="2.5" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <path d="M12 18v3.5" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4.2" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M18.7 5.3l-1.5 1.5M6.8 17.2l-1.5 1.5" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="8.5" y="8.5" width="12" height="12" rx="2.5" />
+      <path d="M15.5 5.5v-.7a2.3 2.3 0 0 0-2.3-2.3H5.8a2.3 2.3 0 0 0-2.3 2.3v7.4a2.3 2.3 0 0 0 2.3 2.3h.7" />
+    </svg>
+  );
+}
+
+function HistoryIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.2 2" />
+    </svg>
+  );
+}
+
 export default function ControlPanel() {
   const storage = useMemo(() => createStorage(), []);
 
@@ -81,19 +187,23 @@ export default function ControlPanel() {
   const [corrections, setCorrections] = useState<Corrections>({});
   const [activeResult, setActiveResult] = useState<RouteResult | null>(null);
   const [runStates, setRunStates] = useState<Record<number, RunState>>({});
+  const [listening, setListening] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState(
     "Voice uses the browser's speech engine — often unavailable on iOS Safari.",
   );
-  const [storageStatus, setStorageStatus] = useState(
-    storage.ok
-      ? "Local session memory ready."
-      : "Local storage unavailable; using in-memory fallback.",
-  );
+  // Constant initial value: storage.ok differs between server and client,
+  // so deriving the initial state from it causes a hydration mismatch.
+  const [storageStatus, setStorageStatus] = useState("Checking session memory…");
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     setHistory(storage.get<RouteResult[]>(HISTORY_KEY, []));
     setCorrections(storage.get<Corrections>(CORRECT_KEY, {}));
+    setStorageStatus(
+      storage.ok
+        ? "Local session memory ready."
+        : "Local storage unavailable; using in-memory fallback.",
+    );
 
     const savedTheme = storage.get<"light" | "dark" | null>(THEME_KEY, null);
     if (savedTheme) {
@@ -237,6 +347,7 @@ export default function ControlPanel() {
     recognition.continuous = false;
 
     let transcript = "";
+    setListening(true);
     setVoiceStatus("Listening… speak your task.");
 
     recognition.onresult = (event) => {
@@ -247,10 +358,12 @@ export default function ControlPanel() {
     };
 
     recognition.onerror = (event) => {
+      setListening(false);
       setVoiceStatus(`Voice input error: ${event.error}`);
     };
 
     recognition.onend = () => {
+      setListening(false);
       setVoiceStatus(
         transcript ? "Voice input captured." : "Voice input stopped.",
       );
@@ -324,23 +437,18 @@ export default function ControlPanel() {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
+      <div className="ambient" aria-hidden="true">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
       <main id="main" className="app">
-        <section className="shell" aria-label="Control header">
+        <header className="shell" aria-label="Control header">
           <div className="brand">
             <div className="logo-wrap">
-              <svg
-                className="logo"
-                viewBox="0 0 64 64"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                aria-label="Codex logo"
-              >
-                <rect x="8" y="8" width="48" height="48" rx="14" />
-                <path d="M21 24h15a8 8 0 1 1 0 16H21" />
-                <path d="M27 18v28" />
-                <path d="M41 24l7 8-7 8" />
-              </svg>
+              <div className="logo-badge" aria-hidden="true">
+                <SparkleIcon />
+              </div>
               <div>
                 <div className="title">Codex Control Panel</div>
                 <div className="subtitle">
@@ -352,32 +460,190 @@ export default function ControlPanel() {
               <button
                 className="icon-btn"
                 type="button"
-                aria-label="Switch theme"
+                aria-label={
+                  theme === "dark"
+                    ? "Switch to light theme"
+                    : "Switch to dark theme"
+                }
                 onClick={() =>
                   setTheme((current) => (current === "dark" ? "light" : "dark"))
                 }
               >
-                ◐
+                {theme === "dark" ? <SunIcon /> : <MoonIcon />}
               </button>
-              <button
-                className="icon-btn"
-                type="button"
-                onClick={clearSession}
-              >
+              <button className="btn secondary" type="button" onClick={clearSession}>
                 Clear
               </button>
             </div>
           </div>
+        </header>
+
+        <section className="hero" aria-label="Intro">
+          <h1>
+            What should we <span className="gradient-text">route</span> today?
+          </h1>
+          <p>
+            Describe the task and the panel picks the right tool, writes the
+            prompt, and runs it — doctrine and overrides baked in.
+          </p>
         </section>
 
-        <section className="panel">
+        <section aria-label="Task input">
+          <div className={`glow-ring${listening ? " glowing" : ""}`}>
+            <div className="composer">
+              <label className="sr-only" htmlFor="taskInput">
+                Task / idea / request
+              </label>
+              <textarea
+                id="taskInput"
+                value={task}
+                onChange={(event) => setTask(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    (event.metaKey || event.ctrlKey) &&
+                    event.key === "Enter"
+                  ) {
+                    handleRoute();
+                  }
+                }}
+                placeholder="Describe a task… e.g. Design the architecture for an astrophotography workshop app, then generate the build prompt for Gemini and prep deployment steps."
+              />
+              <div className="composer-bar">
+                <span className="composer-hint">⌘↩ to route</span>
+                <div className="composer-actions">
+                  <button
+                    id="voiceBtn"
+                    className={`icon-btn${listening ? " listening" : ""}`}
+                    type="button"
+                    aria-label="Start voice input"
+                    onClick={startVoiceInput}
+                  >
+                    <MicIcon />
+                  </button>
+                  <button
+                    id="routeBtn"
+                    className="btn primary"
+                    type="button"
+                    onClick={handleRoute}
+                  >
+                    <SparkleIcon />
+                    Route task
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            className="status"
+            id="voiceStatus"
+            style={{ marginTop: "0.6rem", paddingInline: "0.5rem" }}
+          >
+            {voiceStatus}
+          </div>
+        </section>
+
+        <section className="panel" aria-label="Routing preferences">
+          <div className="panel-head">
+            <h2>Preferences</h2>
+            <span className="eyebrow">Control surface</span>
+          </div>
+          <div className="grid two">
+            <div className="stack">
+              <div>
+                <label className="label" htmlFor="currentTool">
+                  Current tool context
+                </label>
+                <div className="select-wrap">
+                  <select
+                    id="currentTool"
+                    value={currentTool}
+                    onChange={(event) => setCurrentTool(event.target.value)}
+                  >
+                    {TOOL_OPTIONS.map((tool) => (
+                      <option key={tool} value={tool}>
+                        {tool}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <span className="label" id="priorityLabel">
+                  Priority mode
+                </span>
+                <div
+                  className="segmented"
+                  role="group"
+                  aria-labelledby="priorityLabel"
+                >
+                  {PRIORITY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={priority === option.value}
+                      onClick={() => setPriority(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="stack">
+              <div className="switch-row">
+                <div className="switch-copy">
+                  <strong>Execution override</strong>
+                  <span>Stay put when switching adds friction</span>
+                </div>
+                <button
+                  id="overrideToggle"
+                  className="switch"
+                  type="button"
+                  role="switch"
+                  aria-checked={overrideEnabled}
+                  aria-label="Execution override"
+                  onClick={() => setOverrideEnabled((value) => !value)}
+                >
+                  <span className="switch-thumb" />
+                </button>
+              </div>
+              <div className="switch-row">
+                <div className="switch-copy">
+                  <strong>Hybrid routing</strong>
+                  <span>Split multi-part tasks across tools</span>
+                </div>
+                <button
+                  id="hybridToggle"
+                  className="switch"
+                  type="button"
+                  role="switch"
+                  aria-checked={hybridEnabled}
+                  aria-label="Hybrid routing"
+                  onClick={() => setHybridEnabled((value) => !value)}
+                >
+                  <span className="switch-thumb" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel" aria-label="Routing map">
           <div className="panel-head">
             <h2>Routing map</h2>
-            <span className="help">Doctrine + override baked in</span>
+            <span className="eyebrow">Doctrine</span>
           </div>
           <div className="tool-grid" aria-label="Tool doctrine overview">
             {ROUTES.map((route) => (
-              <div className="tool-chip" key={route.key}>
+              <div
+                className="tool-chip"
+                key={route.key}
+                style={
+                  {
+                    "--chip-accent": CHIP_ACCENTS[route.key],
+                  } as React.CSSProperties
+                }
+              >
                 <strong>{route.tool}</strong>
                 <span>{route.map}</span>
               </div>
@@ -385,119 +651,10 @@ export default function ControlPanel() {
           </div>
         </section>
 
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Input</h2>
-            <span className="help">iPhone-first control surface</span>
-          </div>
-          <div className="grid two">
-            <div className="stack">
-              <div>
-                <label className="label" htmlFor="taskInput">
-                  Task / idea / request
-                </label>
-                <textarea
-                  id="taskInput"
-                  value={task}
-                  onChange={(event) => setTask(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (
-                      (event.metaKey || event.ctrlKey) &&
-                      event.key === "Enter"
-                    ) {
-                      handleRoute();
-                    }
-                  }}
-                  placeholder="Example: Design the architecture for an astrophotography workshop app, then generate the build prompt for Gemini and prep deployment steps."
-                />
-              </div>
-              <div className="actions">
-                <button
-                  id="routeBtn"
-                  className="btn primary"
-                  type="button"
-                  onClick={handleRoute}
-                >
-                  Route task
-                </button>
-                <button
-                  id="voiceBtn"
-                  className="btn secondary"
-                  type="button"
-                  onClick={startVoiceInput}
-                >
-                  Start voice input
-                </button>
-              </div>
-              <div className="status" id="voiceStatus">
-                {voiceStatus}
-              </div>
-            </div>
-            <div className="stack">
-              <div>
-                <label className="label" htmlFor="currentTool">
-                  Current tool context
-                </label>
-                <select
-                  id="currentTool"
-                  value={currentTool}
-                  onChange={(event) => setCurrentTool(event.target.value)}
-                >
-                  {TOOL_OPTIONS.map((tool) => (
-                    <option key={tool} value={tool}>
-                      {tool}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="toggles">
-                <label className="toggle">
-                  <input
-                    id="overrideToggle"
-                    type="checkbox"
-                    checked={overrideEnabled}
-                    onChange={(event) =>
-                      setOverrideEnabled(event.target.checked)
-                    }
-                  />
-                  Execution override
-                </label>
-                <label className="toggle">
-                  <input
-                    id="hybridToggle"
-                    type="checkbox"
-                    checked={hybridEnabled}
-                    onChange={(event) => setHybridEnabled(event.target.checked)}
-                  />
-                  Hybrid routing
-                </label>
-              </div>
-              <div>
-                <label className="label" htmlFor="prioritySelect">
-                  Priority mode
-                </label>
-                <select
-                  id="prioritySelect"
-                  value={priority}
-                  onChange={(event) => setPriority(event.target.value)}
-                >
-                  <option value="speed">Speed first</option>
-                  <option value="accuracy">Accuracy first</option>
-                  <option value="balance">Balanced</option>
-                </select>
-              </div>
-              <div className="help">
-                Override keeps work in the current tool when switching adds
-                friction and that tool can reasonably finish.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
+        <section className="panel" aria-label="Routing output">
           <div className="panel-head">
             <h2>Routing output</h2>
-            <span className="help">Tool + prompt + run it live</span>
+            <span className="eyebrow">Tool · prompt · live run</span>
           </div>
           <div className="mini-grid" id="summaryGrid">
             <div className="mini-card">
@@ -531,7 +688,7 @@ export default function ControlPanel() {
               </div>
             </div>
           </div>
-          <div className="help" style={{ margin: ".6rem 0 0" }}>
+          <div className="help" style={{ margin: ".7rem 0 0" }}>
             Match strength = keyword overlap with the doctrine lane, not model
             confidence.
           </div>
@@ -542,6 +699,7 @@ export default function ControlPanel() {
           >
             {!summary ? (
               <div className="empty">
+                <SparkleIcon />
                 Route a task to generate prompts and decisions.
               </div>
             ) : (
@@ -582,7 +740,10 @@ export default function ControlPanel() {
                             <span className="spinner" /> Running…
                           </>
                         ) : (
-                          "Run step with Claude"
+                          <>
+                            <SparkleIcon />
+                            Run step with Claude
+                          </>
                         )}
                       </button>
                       <button
@@ -590,6 +751,7 @@ export default function ControlPanel() {
                         type="button"
                         onClick={() => copyText(item.prompt, "Prompt copied")}
                       >
+                        <CopyIcon />
                         Copy prompt
                       </button>
                       <button
@@ -612,6 +774,7 @@ export default function ControlPanel() {
                           )
                         }
                       >
+                        <CopyIcon />
                         Copy card
                       </button>
                     </div>
@@ -619,7 +782,16 @@ export default function ControlPanel() {
                       runState?.text ||
                       runState?.error) && (
                       <div className="run-out">
-                        {runState.loading && <h4>Claude is working…</h4>}
+                        {runState.loading && (
+                          <h4>
+                            Claude is working
+                            <span className="thinking-dots" aria-hidden="true">
+                              <i />
+                              <i />
+                              <i />
+                            </span>
+                          </h4>
+                        )}
                         {runState.text && (
                           <>
                             <h4>Live result — Claude</h4>
@@ -639,13 +811,15 @@ export default function ControlPanel() {
                     )}
                     <div className="correct-row">
                       <span className="help">Wrong tool?</span>
-                      <select className="correct-select" defaultValue={fromKey}>
-                        {ROUTES.map((route) => (
-                          <option key={route.key} value={route.key}>
-                            {route.tool}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="select-wrap">
+                        <select className="correct-select" defaultValue={fromKey}>
+                          {ROUTES.map((route) => (
+                            <option key={route.key} value={route.key}>
+                              {route.tool}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       <button
                         className="btn secondary"
                         type="button"
@@ -670,9 +844,9 @@ export default function ControlPanel() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel" aria-label="History">
           <div className="panel-head">
-            <h2>History / memory</h2>
+            <h2>History</h2>
             <div className="toolbar">
               <button
                 id="exportBtn"
@@ -687,6 +861,7 @@ export default function ControlPanel() {
           <div className="history-list" id="historyList">
             {history.length === 0 ? (
               <div className="empty">
+                <HistoryIcon />
                 No saved routes yet. Your last decisions appear here.
               </div>
             ) : (
@@ -721,6 +896,7 @@ export default function ControlPanel() {
 
         <section className="footer-row">
           <div className="status" id="storageStatus">
+            <span className="status-dot" aria-hidden="true" />
             {storageStatus}
           </div>
           <div className="status">Next.js • deploy on Vercel</div>
