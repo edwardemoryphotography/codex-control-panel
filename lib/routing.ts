@@ -39,6 +39,14 @@ export type RouteResult = {
   currentTool: string;
   override: { active: boolean; reason: string };
   prompts: PromptPart[];
+  /** What decided the route: "Claude", "GPT", or "doctrine" (local fallback). */
+  source?: string;
+};
+
+export type AiRouteDecision = {
+  routes: Array<{ key: RouteKey; reason: string }>;
+  override: { active: boolean; reason: string };
+  strength: number;
 };
 
 export type Corrections = Record<string, Partial<Record<RouteKey, number>>>;
@@ -431,39 +439,31 @@ export type BuildResultInput = {
   corrections: Corrections;
 };
 
-export function buildResult(input: BuildResultInput): RouteResult {
-  const ranked = scoreRoute(input.task, input.priority, input.corrections);
-  const top =
-    ranked[0] && ranked[0].score > 0
-      ? ranked[0]
-      : { ...routeByKey.architecture, score: 0 };
-  const hybrid = splitTask(input.task, ranked, input.hybridEnabled);
-  const override = detectOverride(
-    input.task,
-    top,
-    input.currentTool,
-    input.overrideEnabled,
-  );
+function overrideRouteItem(
+  currentTool: string,
+  reason: string,
+  score = 0,
+): RouteSetItem {
+  return {
+    key: "override" as RouteKey,
+    label: "execution override",
+    tool: currentTool,
+    map: "",
+    reason,
+    role: "",
+    output: "",
+    keywords: [],
+    score,
+  };
+}
 
-  let routeSet: RouteSetItem[] = hybrid ?? [top];
-
-  if (override.active) {
-    routeSet = [
-      {
-        key: "override" as RouteKey,
-        label: "execution override",
-        tool: input.currentTool,
-        map: "",
-        reason: override.reason,
-        role: "",
-        output: "",
-        keywords: [],
-        score: top.score + 1,
-      },
-      ...(hybrid ? hybrid.slice(0, 1) : []),
-    ].slice(0, hybrid ? 2 : 1);
-  }
-
+function composeResult(
+  input: BuildResultInput,
+  routeSet: RouteSetItem[],
+  override: { active: boolean; reason: string },
+  strength: number,
+  source: string,
+): RouteResult {
   const prompts = routeSet.map((route, index) => ({
     part:
       routeSet.length > 1 ? `Part ${String.fromCharCode(65 + index)}` : "Primary",
@@ -485,14 +485,135 @@ export function buildResult(input: BuildResultInput): RouteResult {
         : override.active
           ? "Override"
           : "Single route",
-    strength: matchStrength(ranked),
+    strength,
     primaryRoute: routeSet[0].tool,
     primaryKey: routeSet[0].key,
     nextAction: deriveNextAction(routeSet, override),
     currentTool: input.currentTool,
     override,
     prompts,
+    source,
   };
+}
+
+export function buildResult(input: BuildResultInput): RouteResult {
+  const ranked = scoreRoute(input.task, input.priority, input.corrections);
+  const top =
+    ranked[0] && ranked[0].score > 0
+      ? ranked[0]
+      : { ...routeByKey.architecture, score: 0 };
+  const hybrid = splitTask(input.task, ranked, input.hybridEnabled);
+  const override = detectOverride(
+    input.task,
+    top,
+    input.currentTool,
+    input.overrideEnabled,
+  );
+
+  let routeSet: RouteSetItem[] = hybrid ?? [top];
+
+  if (override.active) {
+    routeSet = [
+      overrideRouteItem(input.currentTool, override.reason, top.score + 1),
+      ...(hybrid ? hybrid.slice(0, 1) : []),
+    ].slice(0, hybrid ? 2 : 1);
+  }
+
+  return composeResult(input, routeSet, override, matchStrength(ranked), "doctrine");
+}
+
+/**
+ * Validates the raw JSON an LLM returned for a routing decision.
+ * Returns null when the shape is unusable so callers can fall back
+ * to local doctrine routing.
+ */
+export function parseAiDecision(value: unknown): AiRouteDecision | null {
+  if (typeof value !== "object" || value === null) return null;
+  const raw = value as {
+    routes?: unknown;
+    override?: unknown;
+    strength?: unknown;
+  };
+
+  const validKeys = new Set(ROUTES.map((route) => route.key));
+  const routes: Array<{ key: RouteKey; reason: string }> = [];
+  if (Array.isArray(raw.routes)) {
+    for (const entry of raw.routes) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const candidate = entry as { key?: unknown; reason?: unknown };
+      if (
+        typeof candidate.key === "string" &&
+        validKeys.has(candidate.key as RouteKey) &&
+        !routes.some((route) => route.key === candidate.key)
+      ) {
+        routes.push({
+          key: candidate.key as RouteKey,
+          reason: typeof candidate.reason === "string" ? candidate.reason : "",
+        });
+      }
+    }
+  }
+  if (routes.length === 0) return null;
+
+  const overrideRaw =
+    typeof raw.override === "object" && raw.override !== null
+      ? (raw.override as { active?: unknown; reason?: unknown })
+      : {};
+  const override = {
+    active: overrideRaw.active === true,
+    reason: typeof overrideRaw.reason === "string" ? overrideRaw.reason : "",
+  };
+
+  const strengthNum = Number(raw.strength);
+  const strength = Number.isFinite(strengthNum)
+    ? Math.min(100, Math.max(0, Math.round(strengthNum)))
+    : 60;
+
+  return { routes: routes.slice(0, 2), override, strength };
+}
+
+/**
+ * Builds a full RouteResult from an AI routing decision, respecting the
+ * user's override / hybrid toggles.
+ */
+export function buildResultFromDecision(
+  input: BuildResultInput,
+  decision: AiRouteDecision,
+  source: string,
+): RouteResult {
+  const override =
+    input.overrideEnabled && decision.override.active
+      ? {
+          active: true,
+          reason:
+            decision.override.reason ||
+            "Override: stay in the current tool and finish.",
+        }
+      : {
+          active: false,
+          reason:
+            decision.override.reason ||
+            "Doctrine stands; handoff cost is justified.",
+        };
+
+  let routeSet: RouteSetItem[] = decision.routes.map((route) => ({
+    ...routeByKey[route.key],
+    score: 0,
+    reason: route.reason || routeByKey[route.key].reason,
+  }));
+
+  if (!input.hybridEnabled) {
+    routeSet = routeSet.slice(0, 1);
+  }
+
+  if (override.active) {
+    routeSet = [
+      overrideRouteItem(input.currentTool, override.reason),
+      ...routeSet.slice(0, 1),
+    ].slice(0, input.hybridEnabled ? 2 : 1);
+  }
+
+  return composeResult(input, routeSet, override, decision.strength, source);
 }
 
 export function applyCorrection(

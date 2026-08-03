@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ROUTES,
   TOOL_OPTIONS,
   applyCorrection,
   buildResult,
+  buildResultFromDecision,
+  parseAiDecision,
   routeByKey,
   routeByTool,
   type Corrections,
@@ -37,6 +39,12 @@ type RunState = {
   loading: boolean;
   text: string;
   error: string;
+  provider?: string;
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  anthropic: "Claude",
+  openai: "GPT",
 };
 
 function createStorage() {
@@ -187,7 +195,10 @@ export default function ControlPanel() {
   const [corrections, setCorrections] = useState<Corrections>({});
   const [activeResult, setActiveResult] = useState<RouteResult | null>(null);
   const [runStates, setRunStates] = useState<Record<number, RunState>>({});
+  const [routing, setRouting] = useState(false);
+  const [composerError, setComposerError] = useState("");
   const [listening, setListening] = useState(false);
+  const outputRef = useRef<HTMLElement | null>(null);
   const [voiceStatus, setVoiceStatus] = useState(
     "Voice uses the browser's speech engine — often unavailable on iOS Safari.",
   );
@@ -197,6 +208,9 @@ export default function ControlPanel() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect --
+       Hydrating persisted state from localStorage has to happen after mount
+       (the server has no localStorage), which requires setState in an effect. */
     setHistory(storage.get<RouteResult[]>(HISTORY_KEY, []));
     setCorrections(storage.get<Corrections>(CORRECT_KEY, {}));
     setStorageStatus(
@@ -214,6 +228,7 @@ export default function ControlPanel() {
       window.matchMedia &&
       window.matchMedia("(prefers-color-scheme: dark)").matches;
     setTheme(prefersDark ? "dark" : "light");
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [storage]);
 
   useEffect(() => {
@@ -270,26 +285,64 @@ export default function ControlPanel() {
     [storage],
   );
 
-  const handleRoute = useCallback(() => {
+  const handleRoute = useCallback(async () => {
     const trimmed = task.trim();
     if (!trimmed) {
-      flashStatus("Add a task first");
+      setComposerError("Describe a task first — then route it.");
       return;
     }
 
-    const result = buildResult({
+    setComposerError("");
+    setRouting(true);
+
+    const input = {
       task: trimmed,
       currentTool,
       overrideEnabled,
       hybridEnabled,
       priority,
       corrections,
-    });
+    };
+
+    let result: RouteResult;
+    try {
+      const response = await fetch("/api/route", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task: trimmed,
+          currentTool,
+          priority,
+          overrideEnabled,
+          hybridEnabled,
+        }),
+      });
+      if (!response.ok) throw new Error(`API ${response.status}`);
+      const data = (await response.json()) as {
+        decision?: unknown;
+        provider?: string;
+      };
+      const decision = parseAiDecision(data.decision);
+      if (!decision) throw new Error("Unusable AI decision");
+      result = buildResultFromDecision(
+        input,
+        decision,
+        SOURCE_LABELS[data.provider ?? ""] ?? "AI",
+      );
+    } catch {
+      // No key configured, offline, or a bad AI response — the local
+      // doctrine router always produces a result.
+      result = buildResult(input);
+    }
 
     setActiveResult(result);
     setRunStates({});
     saveHistory(result);
+    setRouting(false);
     flashStatus("Task routed");
+    requestAnimationFrame(() => {
+      outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }, [
     task,
     currentTool,
@@ -392,10 +445,18 @@ export default function ControlPanel() {
         throw new Error(data?.error ?? `API ${response.status}`);
       }
 
-      const data = (await response.json()) as { text: string };
+      const data = (await response.json()) as {
+        text: string;
+        provider?: string;
+      };
       setRunStates((prev) => ({
         ...prev,
-        [index]: { loading: false, text: data.text, error: "" },
+        [index]: {
+          loading: false,
+          text: data.text,
+          error: "",
+          provider: SOURCE_LABELS[data.provider ?? ""] ?? "AI",
+        },
       }));
     } catch (error) {
       const message =
@@ -489,7 +550,7 @@ export default function ControlPanel() {
         </section>
 
         <section aria-label="Task input">
-          <div className={`glow-ring${listening ? " glowing" : ""}`}>
+          <div className={`glow-ring${listening || routing ? " glowing" : ""}`}>
             <div className="composer">
               <label className="sr-only" htmlFor="taskInput">
                 Task / idea / request
@@ -497,7 +558,10 @@ export default function ControlPanel() {
               <textarea
                 id="taskInput"
                 value={task}
-                onChange={(event) => setTask(event.target.value)}
+                onChange={(event) => {
+                  setTask(event.target.value);
+                  if (composerError) setComposerError("");
+                }}
                 onKeyDown={(event) => {
                   if (
                     (event.metaKey || event.ctrlKey) &&
@@ -524,15 +588,33 @@ export default function ControlPanel() {
                     id="routeBtn"
                     className="btn primary"
                     type="button"
+                    disabled={routing}
                     onClick={handleRoute}
                   >
-                    <SparkleIcon />
-                    Route task
+                    {routing ? (
+                      <>
+                        <span className="spinner" /> Routing…
+                      </>
+                    ) : (
+                      <>
+                        <SparkleIcon />
+                        Route task
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           </div>
+          {composerError && (
+            <div
+              className="composer-error"
+              role="alert"
+              style={{ marginTop: "0.6rem", paddingInline: "0.5rem" }}
+            >
+              {composerError}
+            </div>
+          )}
           <div
             className="status"
             id="voiceStatus"
@@ -651,10 +733,19 @@ export default function ControlPanel() {
           </div>
         </section>
 
-        <section className="panel" aria-label="Routing output">
+        <section className="panel" aria-label="Routing output" ref={outputRef}>
           <div className="panel-head">
             <h2>Routing output</h2>
-            <span className="eyebrow">Tool · prompt · live run</span>
+            {summary?.source && summary.source !== "doctrine" ? (
+              <span className="pill primary">
+                <SparkleIcon className="pill-icon" />
+                Routed by {summary.source}
+              </span>
+            ) : summary ? (
+              <span className="pill">Doctrine routing</span>
+            ) : (
+              <span className="eyebrow">Tool · prompt · live run</span>
+            )}
           </div>
           <div className="mini-grid" id="summaryGrid">
             <div className="mini-card">
@@ -695,6 +786,7 @@ export default function ControlPanel() {
           <div
             className="output-wrap"
             id="outputWrap"
+            key={summary?.createdAt ?? "empty"}
             style={{ marginTop: "var(--space-4)" }}
           >
             {!summary ? (
@@ -742,7 +834,7 @@ export default function ControlPanel() {
                         ) : (
                           <>
                             <SparkleIcon />
-                            Run step with Claude
+                            Run step live
                           </>
                         )}
                       </button>
@@ -784,7 +876,7 @@ export default function ControlPanel() {
                       <div className="run-out">
                         {runState.loading && (
                           <h4>
-                            Claude is working
+                            Thinking
                             <span className="thinking-dots" aria-hidden="true">
                               <i />
                               <i />
@@ -794,7 +886,7 @@ export default function ControlPanel() {
                         )}
                         {runState.text && (
                           <>
-                            <h4>Live result — Claude</h4>
+                            <h4>Live result — {runState.provider ?? "AI"}</h4>
                             {runState.text}
                           </>
                         )}
@@ -802,9 +894,10 @@ export default function ControlPanel() {
                           <>
                             <h4>Live run unavailable</h4>
                             Couldn&apos;t reach the API here ({runState.error}).
-                            Use “Copy prompt” and paste into your tool. Set{" "}
-                            <code>ANTHROPIC_API_KEY</code> in your environment
-                            for live runs on Vercel.
+                            Use “Copy prompt” and paste into your tool, or set{" "}
+                            <code>ANTHROPIC_API_KEY</code> /{" "}
+                            <code>OPENAI_API_KEY</code> in your deployment
+                            environment for live runs.
                           </>
                         )}
                       </div>
