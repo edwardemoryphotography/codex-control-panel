@@ -97,6 +97,7 @@ export default function BiometricsTab() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- kick off the initial fetch after mount
   useEffect(() => { load(); }, [load]);
 
   const summary = state?.days.length ? summarize(state.days) : null;

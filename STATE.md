@@ -1,11 +1,12 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-06-15_
+_Last updated: 2026-08-03_
 
 ---
 
 ## ✅ SHIPPED
 
+- **Codex Control Panel v2** → liquid-glass UI (Apple Intelligence × Gemini), AI-powered routing via `/api/route` (Claude → GPT fallback, doctrine fallback offline), auto-scroll + feedback on route, lint/tests/build all green; `SUPERPROMPT.md` added for unifying all Legacy Codex repos
 - **Photographer Agent Pack V1** → live on Gumroad (`edwardemory.gumroad.com/l/photographer-agent-pack-v1`)
 - **Artful Intelligence storefront** (`artful-intelligence-v1.html`) → deployed to Vercel, June 9 2026
 - **Starforge** → working prompt → Claude API → live HTML preview loop
