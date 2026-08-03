@@ -6,7 +6,8 @@ _Last updated: 2026-08-03_
 
 ## ✅ SHIPPED
 
-- **Codex Control Panel v2** → liquid-glass UI (Apple Intelligence × Gemini), AI-powered routing via `/api/route` (Claude → GPT fallback, doctrine fallback offline), auto-scroll + feedback on route, lint/tests/build all green; `SUPERPROMPT.md` added for unifying all Legacy Codex repos
+- **Codex Control Panel v2 UI** → liquid-glass redesign (Apple Intelligence × Gemini) merged via PR #6 and auto-deployed
+- **In PR #7 (implemented, NOT yet shipped)** → AI routing with provider policy + structured outputs, task lifecycle honesty, API safeguards + `/api/health`, lint 0 errors / 32 tests green, and Standards Kit v2 (`standards/` — master charter + run cards + handoff contract); shipping blocked on merge + Vercel `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` + live verification
 - **Photographer Agent Pack V1** → live on Gumroad (`edwardemory.gumroad.com/l/photographer-agent-pack-v1`)
 - **Artful Intelligence storefront** (`artful-intelligence-v1.html`) → deployed to Vercel, June 9 2026
 - **Starforge** → working prompt → Claude API → live HTML preview loop
