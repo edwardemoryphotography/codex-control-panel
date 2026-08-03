@@ -28,6 +28,21 @@ export type PromptPart = {
   prompt: string;
 };
 
+/**
+ * Persisted record of one AI draft generation for a routed step. Stored on
+ * the task record so history and exports preserve the lifecycle.
+ */
+export type StepRun = {
+  status: "generated" | "failed";
+  provider?: string;
+  /** Exact model that produced the draft. */
+  model?: string;
+  output?: string;
+  error?: string;
+  /** ISO timestamp of when the run finished. */
+  at: string;
+};
+
 export type RouteResult = {
   /** Task ID, e.g. "T-ABC123XY" — carried through history and exports. */
   id?: string;
@@ -45,6 +60,8 @@ export type RouteResult = {
   source?: string;
   /** Exact model that produced the decision, when AI-routed. */
   model?: string;
+  /** AI draft generations per prompt index, persisted with the task. */
+  runs?: Record<number, StepRun>;
 };
 
 export type AiRouteDecision = {
@@ -635,6 +652,37 @@ export function buildResultFromDecision(
     source,
     model,
   );
+}
+
+export type CorrectionHint = { key: RouteKey; weight: number };
+
+/**
+ * Compact summary of the user's learned corrections that apply to this
+ * task's wording, suitable for sending to the AI classifier so "Teach
+ * router" affects AI routing, not just the doctrine fallback.
+ */
+export function correctionHints(
+  task: string,
+  corrections: Corrections,
+): CorrectionHint[] {
+  const totals = new Map<RouteKey, number>();
+  for (const tok of salientTokens(task)) {
+    const bias = corrections[tok];
+    if (!bias) continue;
+    for (const [key, weight] of Object.entries(bias)) {
+      if (typeof weight === "number" && weight > 0) {
+        totals.set(
+          key as RouteKey,
+          (totals.get(key as RouteKey) ?? 0) + weight,
+        );
+      }
+    }
+  }
+  return [...totals.entries()]
+    .map(([key, weight]) => ({ key, weight: Math.round(weight) }))
+    .filter((hint) => hint.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 4);
 }
 
 export function applyCorrection(

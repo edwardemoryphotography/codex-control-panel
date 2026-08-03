@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildResult,
   buildResultFromDecision,
+  correctionHints,
   parseAiDecision,
   applyCorrection,
   scoreRoute,
@@ -199,6 +200,39 @@ describe('buildResultFromDecision', () => {
     )
     expect(result.override.active).toBe(false)
     expect(result.primaryRoute).toBe('Gemini')
+  })
+})
+
+describe('correctionHints (feeds Teach-router learning to AI routing)', () => {
+  it('returns nothing when no corrections apply to the wording', () => {
+    expect(correctionHints('Build a photo gallery', {})).toEqual([])
+    expect(
+      correctionHints('Build a photo gallery', {
+        unrelated: { documentation: 4 },
+      }),
+    ).toEqual([])
+  })
+
+  it('sums weights across matching tokens, sorted by weight', () => {
+    const hints = correctionHints('Build a photo gallery app', {
+      gallery: { documentation: 4, research: 1 },
+      photo: { documentation: 2 },
+    })
+    expect(hints[0]).toEqual({ key: 'documentation', weight: 6 })
+    expect(hints[1]).toEqual({ key: 'research', weight: 1 })
+  })
+
+  it('caps the number of hints at 4', () => {
+    const hints = correctionHints('Build a photo gallery app', {
+      gallery: {
+        documentation: 5,
+        research: 4,
+        deployment: 3,
+        architecture: 2,
+        system_state: 1,
+      },
+    })
+    expect(hints).toHaveLength(4)
   })
 })
 

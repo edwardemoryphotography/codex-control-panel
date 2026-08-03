@@ -7,17 +7,20 @@ import {
   applyCorrection,
   buildResult,
   buildResultFromDecision,
+  correctionHints,
   parseAiDecision,
   routeByKey,
   routeByTool,
   type Corrections,
   type RouteKey,
   type RouteResult,
+  type StepRun,
 } from "@/lib/routing";
 
 const HISTORY_KEY = "codex-control-panel-history-v2";
 const THEME_KEY = "codex-control-panel-theme";
 const CORRECT_KEY = "codex-control-panel-corrections-v1";
+const ACCESS_KEY = "codex-control-panel-access-key";
 
 const CHIP_ACCENTS: Record<RouteKey, string> = {
   execution: "#3d8bff",
@@ -40,6 +43,8 @@ type RunState = {
   text: string;
   error: string;
   provider?: string;
+  /** Exact model that produced the draft. */
+  model?: string;
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -198,7 +203,12 @@ export default function ControlPanel() {
   const [routing, setRouting] = useState(false);
   const [composerError, setComposerError] = useState("");
   const [listening, setListening] = useState(false);
+  const [accessKey, setAccessKey] = useState("");
   const outputRef = useRef<HTMLElement | null>(null);
+  // Refs guard against duplicate submissions from rapid clicks or repeated
+  // keyboard shortcuts — state updates are async, refs are synchronous.
+  const routingRef = useRef(false);
+  const draftsInFlight = useRef<Set<number>>(new Set());
   const [voiceStatus, setVoiceStatus] = useState(
     "Voice uses the browser's speech engine — often unavailable on iOS Safari.",
   );
@@ -213,6 +223,7 @@ export default function ControlPanel() {
        (the server has no localStorage), which requires setState in an effect. */
     setHistory(storage.get<RouteResult[]>(HISTORY_KEY, []));
     setCorrections(storage.get<Corrections>(CORRECT_KEY, {}));
+    setAccessKey(storage.get<string>(ACCESS_KEY, ""));
     setStorageStatus(
       storage.ok
         ? "Local session memory ready."
@@ -285,7 +296,52 @@ export default function ControlPanel() {
     [storage],
   );
 
+  const updateAccessKey = useCallback(
+    (value: string) => {
+      setAccessKey(value);
+      storage.set(ACCESS_KEY, value);
+    },
+    [storage],
+  );
+
+  const authHeaders = useCallback((): Record<string, string> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (accessKey.trim()) headers["x-codex-key"] = accessKey.trim();
+    return headers;
+  }, [accessKey]);
+
+  /**
+   * Persists a draft-generation record into the active task and its history
+   * entry so the lifecycle survives reloads and session exports.
+   */
+  const recordRun = useCallback(
+    (taskId: string | undefined, index: number, run: StepRun) => {
+      if (!taskId) return;
+      setActiveResult((prev) =>
+        prev && prev.id === taskId
+          ? { ...prev, runs: { ...prev.runs, [index]: run } }
+          : prev,
+      );
+      setHistory((prev) => {
+        const next = prev.map((item) =>
+          item.id === taskId
+            ? { ...item, runs: { ...item.runs, [index]: run } }
+            : item,
+        );
+        storage.set(HISTORY_KEY, next);
+        return next;
+      });
+    },
+    [storage],
+  );
+
   const handleRoute = useCallback(async () => {
+    // Guard against duplicate submissions (double-click or repeated
+    // Cmd/Ctrl+Enter) while a routing request is in flight.
+    if (routingRef.current) return;
+
     const trimmed = task.trim();
     if (!trimmed) {
       setComposerError("Describe a task first — then route it.");
@@ -293,6 +349,7 @@ export default function ControlPanel() {
     }
 
     setComposerError("");
+    routingRef.current = true;
     setRouting(true);
 
     const input = {
@@ -305,19 +362,23 @@ export default function ControlPanel() {
     };
 
     let result: RouteResult;
+    let statusMessage = "Task routed";
     try {
       const response = await fetch("/api/route", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           task: trimmed,
           currentTool,
           priority,
           overrideEnabled,
           hybridEnabled,
+          // "Teach router" corrections reach the AI classifier too, not
+          // just the local doctrine fallback.
+          correctionHints: correctionHints(trimmed, corrections),
         }),
       });
-      if (!response.ok) throw new Error(`API ${response.status}`);
+      if (!response.ok) throw new Error(String(response.status));
       const data = (await response.json()) as {
         decision?: unknown;
         provider?: string;
@@ -331,17 +392,23 @@ export default function ControlPanel() {
         SOURCE_LABELS[data.provider ?? ""] ?? "AI",
         data.model,
       );
-    } catch {
-      // No key configured, offline, or a bad AI response — the local
-      // doctrine router always produces a result.
+    } catch (error) {
+      // No key configured, locked, offline, or a bad AI response — the
+      // local doctrine router always produces a result.
       result = buildResult(input);
+      const status = error instanceof Error ? error.message : "";
+      if (status === "401" || status === "503") {
+        statusMessage =
+          "AI routing locked — add your access key in Preferences. Used doctrine routing.";
+      }
     }
 
     setActiveResult(result);
     setRunStates({});
     saveHistory(result);
+    routingRef.current = false;
     setRouting(false);
-    flashStatus("Task routed");
+    flashStatus(statusMessage);
     requestAnimationFrame(() => {
       outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -354,6 +421,7 @@ export default function ControlPanel() {
     corrections,
     saveHistory,
     flashStatus,
+    authHeaders,
   ]);
 
   const exportSession = useCallback(() => {
@@ -427,53 +495,93 @@ export default function ControlPanel() {
     recognition.start();
   }, []);
 
-  const runWithClaude = useCallback(async (promptText: string, index: number) => {
-    setRunStates((prev) => ({
-      ...prev,
-      [index]: { loading: true, text: "", error: "" },
-    }));
+  /**
+   * Generates an AI draft of the routed step via a general LLM. This is
+   * draft generation, NOT execution of the routed action — the routed
+   * action still happens in the selected tool.
+   */
+  const generateDraft = useCallback(
+    async (promptText: string, index: number, taskId?: string) => {
+      // Guard against duplicate requests for the same step.
+      if (draftsInFlight.current.has(index)) return;
+      draftsInFlight.current.add(index);
 
-    try {
-      const response = await fetch("/api/claude", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptText }),
-      });
+      setRunStates((prev) => ({
+        ...prev,
+        [index]: { loading: true, text: "", error: "" },
+      }));
 
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(data?.error ?? `API ${response.status}`);
+      try {
+        const response = await fetch("/api/claude", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ prompt: promptText }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? `API ${response.status}`);
+        }
+
+        const data = (await response.json()) as {
+          text: string;
+          provider?: string;
+          model?: string;
+        };
+        const provider = SOURCE_LABELS[data.provider ?? ""] ?? "AI";
+        setRunStates((prev) => ({
+          ...prev,
+          [index]: {
+            loading: false,
+            text: data.text,
+            error: "",
+            provider,
+            model: data.model,
+          },
+        }));
+        recordRun(taskId, index, {
+          status: "generated",
+          provider,
+          model: data.model,
+          output: data.text,
+          at: new Date().toISOString(),
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Request failed";
+        setRunStates((prev) => ({
+          ...prev,
+          [index]: { loading: false, text: "", error: message },
+        }));
+        recordRun(taskId, index, {
+          status: "failed",
+          error: message,
+          at: new Date().toISOString(),
+        });
+      } finally {
+        draftsInFlight.current.delete(index);
       }
-
-      const data = (await response.json()) as {
-        text: string;
-        provider?: string;
-      };
-      setRunStates((prev) => ({
-        ...prev,
-        [index]: {
-          loading: false,
-          text: data.text,
-          error: "",
-          provider: SOURCE_LABELS[data.provider ?? ""] ?? "AI",
-        },
-      }));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Request failed";
-      setRunStates((prev) => ({
-        ...prev,
-        [index]: { loading: false, text: "", error: message },
-      }));
-    }
-  }, []);
+    },
+    [authHeaders, recordRun],
+  );
 
   const loadHistoryItem = useCallback((item: RouteResult) => {
     setTask(item.task);
     setActiveResult(item);
-    setRunStates({});
+    // Restore persisted draft runs so the lifecycle survives reloads.
+    const restored: Record<number, RunState> = {};
+    for (const [key, run] of Object.entries(item.runs ?? {})) {
+      restored[Number(key)] = {
+        loading: false,
+        text: run.output ?? "",
+        error: run.error ?? "",
+        provider: run.provider,
+        model: run.model,
+      };
+    }
+    setRunStates(restored);
     flashStatus("History item loaded");
   }, [flashStatus]);
 
@@ -708,6 +816,25 @@ export default function ControlPanel() {
                   <span className="switch-thumb" />
                 </button>
               </div>
+              <div>
+                <label className="label" htmlFor="accessKey">
+                  Access key
+                </label>
+                <input
+                  id="accessKey"
+                  className="text-input"
+                  type="password"
+                  autoComplete="off"
+                  value={accessKey}
+                  onChange={(event) => updateAccessKey(event.target.value)}
+                  placeholder="Required when the deployment sets APP_ACCESS_TOKEN"
+                />
+                <div className="help" style={{ marginTop: ".4rem" }}>
+                  AI routing and drafts are owner-locked in production. Enter
+                  the deployment&apos;s <code>APP_ACCESS_TOKEN</code> here —
+                  stored only on this device.
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -788,11 +915,13 @@ export default function ControlPanel() {
                 {summary.source === "doctrine"
                   ? "local doctrine rules"
                   : `${summary.source}${summary.model ? ` (${summary.model})` : ""}`}
-                . Routing is a recommendation — nothing runs until you execute
-                a step below.
+                . Routing is a recommendation — this panel never executes the
+                routed action. &ldquo;Generate draft&rdquo; only drafts the
+                step with a general AI model; run the real action in the
+                selected tool.
               </>
             ) : (
-              "Routing produces a recommendation + prompt per step; execution only happens when you run a step."
+              "Routing produces a recommendation + prompt per step. This panel never executes the routed action — it can only generate an AI draft of a step."
             )}
           </div>
           <div
@@ -814,16 +943,14 @@ export default function ControlPanel() {
                     : (routeByTool[item.tool]?.key ?? "architecture");
                 const runState = runStates[index];
 
-                const executionStatus = runState?.loading ? (
-                  <span className="pill warn">Executing…</span>
+                const draftStatus = runState?.loading ? (
+                  <span className="pill warn">Generating draft…</span>
                 ) : runState?.text ? (
-                  <span className="pill success">
-                    Executed — evidence below
-                  </span>
+                  <span className="pill success">Draft ready — below</span>
                 ) : runState?.error ? (
-                  <span className="pill error">Execution failed</span>
+                  <span className="pill error">Draft failed</span>
                 ) : (
-                  <span className="pill">Not executed</span>
+                  <span className="pill">No draft yet</span>
                 );
 
                 return (
@@ -832,7 +959,7 @@ export default function ControlPanel() {
                       <span className="pill primary">{item.part}</span>
                       <span className="pill">{item.tool}</span>
                       <span className="pill">{item.category}</span>
-                      {executionStatus}
+                      {draftStatus}
                     </div>
                     <h3>Selected tool: {item.tool}</h3>
                     <p>
@@ -850,16 +977,18 @@ export default function ControlPanel() {
                         className="btn primary"
                         type="button"
                         disabled={runState?.loading}
-                        onClick={() => runWithClaude(item.prompt, index)}
+                        onClick={() =>
+                          generateDraft(item.prompt, index, summary.id)
+                        }
                       >
                         {runState?.loading ? (
                           <>
-                            <span className="spinner" /> Running…
+                            <span className="spinner" /> Generating…
                           </>
                         ) : (
                           <>
                             <SparkleIcon />
-                            Run step live
+                            Generate draft
                           </>
                         )}
                       </button>
@@ -911,18 +1040,18 @@ export default function ControlPanel() {
                         )}
                         {runState.text && (
                           <>
-                            <h4>Live result — {runState.provider ?? "AI"}</h4>
+                            <h4>
+                              AI draft — {runState.provider ?? "AI"}
+                              {runState.model ? ` (${runState.model})` : ""}
+                            </h4>
                             {runState.text}
                           </>
                         )}
                         {runState.error && (
                           <>
-                            <h4>Live run unavailable</h4>
-                            Couldn&apos;t reach the API here ({runState.error}).
-                            Use “Copy prompt” and paste into your tool, or set{" "}
-                            <code>ANTHROPIC_API_KEY</code> /{" "}
-                            <code>OPENAI_API_KEY</code> in your deployment
-                            environment for live runs.
+                            <h4>Draft unavailable</h4>
+                            {runState.error} Use “Copy prompt” and run the
+                            step in the selected tool instead.
                           </>
                         )}
                       </div>
