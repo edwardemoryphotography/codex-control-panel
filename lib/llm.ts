@@ -50,10 +50,11 @@ export function configuredModel(provider: LlmProvider): {
   model: string;
   explicit: boolean;
 } {
-  const envVar =
+  const envVar = (
     provider === "anthropic"
       ? process.env.ANTHROPIC_MODEL
-      : process.env.OPENAI_MODEL;
+      : process.env.OPENAI_MODEL
+  )?.trim();
   return envVar
     ? { model: envVar, explicit: true }
     : { model: DEFAULT_MODELS[provider], explicit: false };
@@ -90,10 +91,136 @@ function timeoutMs(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TIMEOUT_MS;
 }
 
-function providerKey(provider: LlmProvider): string | undefined {
+function rawProviderKey(provider: LlmProvider): string | undefined {
   return provider === "anthropic"
     ? process.env.ANTHROPIC_API_KEY
     : process.env.OPENAI_API_KEY;
+}
+
+function providerKey(provider: LlmProvider): string | undefined {
+  // Keys pasted into dashboards frequently pick up a trailing newline or
+  // space, which providers reject as "invalid x-api-key". Trim defensively.
+  const trimmed = rawProviderKey(provider)?.trim();
+  return trimmed || undefined;
+}
+
+/**
+ * Non-secret sanity checks on configured keys, for the health endpoint.
+ * Catches the common paste accidents behind 401 authentication_error.
+ */
+export function keyDiagnostics(): string[] {
+  const warnings: string[] = [];
+  const expectations: Record<LlmProvider, { env: string; prefix: string }> = {
+    anthropic: { env: "ANTHROPIC_API_KEY", prefix: "sk-ant-" },
+    openai: { env: "OPENAI_API_KEY", prefix: "sk-" },
+  };
+
+  for (const provider of ["anthropic", "openai"] as LlmProvider[]) {
+    const raw = rawProviderKey(provider);
+    if (!raw) continue;
+    const { env, prefix } = expectations[provider];
+    if (raw !== raw.trim()) {
+      warnings.push(
+        `${env} has leading/trailing whitespace (auto-trimmed at runtime) — re-paste it cleanly.`,
+      );
+    }
+    const key = raw.trim();
+    if (/\s/.test(key)) {
+      warnings.push(
+        `${env} contains internal whitespace — it is almost certainly truncated or pasted wrong.`,
+      );
+    } else if (!key.startsWith(prefix)) {
+      warnings.push(
+        `${env} does not start with "${prefix}" — check that the full key was pasted.`,
+      );
+    }
+  }
+  return warnings;
+}
+
+export type ProbeResult = {
+  provider: LlmProvider;
+  model: string;
+  ok: boolean;
+  classification:
+    | "ok"
+    | "invalid_key"
+    | "permission_denied"
+    | "model_not_found"
+    | "rate_limited"
+    | "error"
+    | "not_configured";
+  status?: number;
+};
+
+/**
+ * Makes a minimal live call to validate the configured key + model
+ * (charter §5.3: validate configured model availability at deployment).
+ * Returns a safe classification only — never provider response bodies.
+ */
+export async function probeProvider(
+  provider: LlmProvider,
+): Promise<ProbeResult> {
+  const { model } = configuredModel(provider);
+  const key = providerKey(provider);
+  if (!key) {
+    return { provider, model, ok: false, classification: "not_configured" };
+  }
+
+  let status: number;
+  try {
+    if (provider === "anthropic") {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal: AbortSignal.timeout(10_000),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      });
+      status = response.status;
+    } else {
+      // GET /v1/models/{id} validates both the key and the model for free.
+      const response = await fetch(
+        `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
+        {
+          signal: AbortSignal.timeout(10_000),
+          headers: { Authorization: `Bearer ${key}` },
+        },
+      );
+      status = response.status;
+    }
+  } catch {
+    return { provider, model, ok: false, classification: "error" };
+  }
+
+  const classification: ProbeResult["classification"] =
+    status >= 200 && status < 300
+      ? "ok"
+      : status === 401
+        ? "invalid_key"
+        : status === 403
+          ? "permission_denied"
+          : status === 404
+            ? "model_not_found"
+            : status === 429
+              ? "rate_limited"
+              : "error";
+
+  return { provider, model, ok: classification === "ok", classification, status };
+}
+
+/** True when the aggregated failure text indicates a rejected API key. */
+export function isAuthFailure(message: string): boolean {
+  return /\b401\b|invalid x-api-key|authentication_error|incorrect api key/i.test(
+    message,
+  );
 }
 
 export function hasLlmProvider(): boolean {
@@ -136,6 +263,8 @@ async function callAnthropic(
             description:
               "Report the result. Always call this tool with the answer.",
             input_schema: options.schema.schema,
+            // Enforce the schema server-side rather than best-effort.
+            strict: true,
           },
         ],
         tool_choice: { type: "tool", name: options.schema.name },
