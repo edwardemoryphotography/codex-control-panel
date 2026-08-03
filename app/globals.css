@@ -472,6 +472,13 @@ a {
   padding: 0.55rem 0.65rem 0.65rem;
 }
 
+.composer-error {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  font-weight: 570;
+  animation: card-enter 0.3s ease both;
+}
+
 .composer-hint {
   font-size: var(--text-xs);
   color: var(--color-faint);
@@ -929,6 +936,11 @@ a {
   background: var(--gradient-brand);
   border-color: transparent;
   color: #fff;
+}
+
+.pill-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .pill.success {

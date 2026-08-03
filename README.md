@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Codex Control Panel
 
-## Getting Started
+Mobile-first AI dispatcher for the Legacy Codex system. Describe a task, and the panel routes it to the right tool (Gemini, Perplexity, Claude / ChatGPT, Vercel + GitHub, Notion, Codex KG), writes the execution-ready prompt, and can run it live against Anthropic or OpenAI.
 
-First, run the development server:
+Built with Next.js (App Router), React, and a custom "Liquid Intelligence" design system — Apple Intelligence-style liquid glass and Siri glow, Gemini-style gradients.
+
+## Features
+
+- **AI-powered routing** — `/api/route` asks Claude (falling back to GPT) to pick the doctrine lane, decide hybrid splits, and apply the execution override. When no key is configured or the call fails, a local keyword-doctrine router takes over so routing always works.
+- **Live prompt runs** — `/api/claude` executes any generated prompt against Anthropic → OpenAI with automatic fallback.
+- **Teachable** — correct a wrong route and the panel biases future keyword routing toward your choice (persisted locally).
+- **Session memory** — history, corrections, and theme persist in `localStorage`; export the session as JSON.
+- **Voice input** — browser speech recognition where available.
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | one of the two | Claude routing + live runs (tried first) |
+| `OPENAI_API_KEY` | one of the two | GPT routing + live runs (fallback) |
+| `ANTHROPIC_MODEL` | no | Override the Claude model (default `claude-sonnet-4-6`) |
+| `OPENAI_MODEL` | no | Override the GPT model (default `gpt-4o-mini`) |
 
-## Learn More
+Set these in Vercel → Project → Settings → Environment Variables, then redeploy. Without any key the app still works using local doctrine routing (the output badge shows "Doctrine routing" instead of "Routed by Claude/GPT").
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev     # dev server
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # eslint (passes clean)
+npm test        # vitest — unit + UI tests
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Push to `main`; Vercel builds and deploys automatically. The project must be configured as a **Next.js** project (not "Other/static") so the `/api/*` route handlers run.
