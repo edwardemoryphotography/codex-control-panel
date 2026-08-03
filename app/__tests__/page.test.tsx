@@ -1,81 +1,98 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from '../page'
 
-vi.mock('@/components/overview-tab', () => ({ default: () => <div>OverviewTab</div> }))
-vi.mock('@/components/protocols-tab', () => ({ default: () => <div>ProtocolsTab</div> }))
-vi.mock('@/components/sprint-linker-tab', () => ({ default: () => <div>SprintLinkerTab</div> }))
-vi.mock('@/components/resumption-log-tab', () => ({ default: () => <div>ResumptionLogTab</div> }))
-vi.mock('@/components/biometrics-tab', () => ({ default: () => <div>BiometricsTab</div> }))
-vi.mock('@/components/constraint-validator-tab', () => ({ default: () => <div>ConstraintValidatorTab</div> }))
-vi.mock('@/components/codex-tab', () => ({ default: () => <div>CodexTab</div> }))
-
-describe('Home page — tab shell', () => {
-  it('renders the Legacy Codex heading', () => {
-    render(<Home />)
-    expect(screen.getByRole('heading', { name: 'Legacy Codex' })).toBeInTheDocument()
+describe('Home page — control panel', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    // Simulate the AI routing API being unreachable so the panel falls
+    // back to the local doctrine router (deterministic for tests).
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('offline')),
+    )
   })
 
-  it('renders all 7 tab buttons', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('renders the brand and hero', () => {
     render(<Home />)
-    expect(screen.getAllByRole('tab')).toHaveLength(7)
-    ;['Overview', 'Protocols', 'Sprint Linker', 'Resumption Log', 'Biometrics', 'Constraint Validator', 'Codex'].forEach(label => {
-      expect(screen.getByRole('tab', { name: label })).toBeInTheDocument()
+    expect(screen.getByText('Codex Control Panel')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 1 }),
+    ).toHaveTextContent(/route/i)
+  })
+
+  it('shows an inline error when routing with an empty task', async () => {
+    render(<Home />)
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /describe a task first/i,
+    )
+  })
+
+  it('routes a task and renders the output cards (doctrine fallback)', async () => {
+    render(<Home />)
+    fireEvent.change(screen.getByLabelText(/task \/ idea \/ request/i), {
+      target: {
+        value: 'Build a photo gallery app and deploy it to Vercel',
+      },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/selected tool:/i).length).toBeGreaterThan(0)
+    })
+    expect(screen.getByText('Doctrine routing')).toBeInTheDocument()
+    expect(document.getElementById('summaryRoute')?.textContent).not.toBe('—')
+  })
+
+  it('toggles the iOS-style switches', () => {
+    render(<Home />)
+    const override = screen.getByRole('switch', { name: /execution override/i })
+    expect(override).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(override)
+    expect(override).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('changes the active priority segment', () => {
+    render(<Home />)
+    const speed = screen.getByRole('button', { name: 'Speed' })
+    const balanced = screen.getByRole('button', { name: 'Balanced' })
+    expect(balanced).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(speed)
+    expect(speed).toHaveAttribute('aria-pressed', 'true')
+    expect(balanced).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('switches theme via the header toggle', async () => {
+    render(<Home />)
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-theme')).toBeTruthy()
+    })
+    const before = document.documentElement.getAttribute('data-theme')
+    fireEvent.click(screen.getByRole('button', { name: /switch to .* theme/i }))
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-theme')).not.toBe(before)
     })
   })
 
-  it('Overview tab is selected by default', () => {
+  it('saves routed tasks into history', async () => {
     render(<Home />)
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
-  })
-
-  it('all other tabs are not selected by default', () => {
-    render(<Home />)
-    screen.getAllByRole('tab')
-      .filter(tab => tab.textContent !== 'Overview')
-      .forEach(tab => expect(tab).toHaveAttribute('aria-selected', 'false'))
-  })
-
-  it('clicking a tab selects it and deselects Overview', () => {
-    render(<Home />)
-    const protocols = screen.getByRole('tab', { name: 'Protocols' })
-    fireEvent.click(protocols)
-    expect(protocols).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'false')
-  })
-
-  it('each tab button has the correct id and aria-controls', () => {
-    render(<Home />)
-    const overviewTab = screen.getByRole('tab', { name: 'Overview' })
-    expect(overviewTab).toHaveAttribute('id', 'tab-overview')
-    expect(overviewTab).toHaveAttribute('aria-controls', 'tabpanel-content')
-  })
-
-  it('tab panel has role=tabpanel', () => {
-    render(<Home />)
-    expect(screen.getByRole('tabpanel')).toBeInTheDocument()
-  })
-
-  it('tab panel is labelled by the active tab id', () => {
-    render(<Home />)
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-overview')
-  })
-
-  it('tab panel aria-labelledby updates when a tab is clicked', () => {
-    render(<Home />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Codex' }))
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-codex')
-  })
-
-  it('shows Overview content by default', () => {
-    render(<Home />)
-    expect(screen.getByText('OverviewTab')).toBeInTheDocument()
-  })
-
-  it('shows Protocols content and hides Overview when Protocols tab is clicked', () => {
-    render(<Home />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Protocols' }))
-    expect(screen.getByText('ProtocolsTab')).toBeInTheDocument()
-    expect(screen.queryByText('OverviewTab')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/task \/ idea \/ request/i), {
+      target: { value: 'Research current astrophotography pricing' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+    await waitFor(() => {
+      expect(
+        screen.getByText(/research current astrophotography pricing/i),
+      ).toBeInTheDocument()
+    })
+    const stored = JSON.parse(
+      localStorage.getItem('codex-control-panel-history-v2') ?? '[]',
+    )
+    expect(stored).toHaveLength(1)
   })
 })
