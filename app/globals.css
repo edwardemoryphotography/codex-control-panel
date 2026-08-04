@@ -1214,10 +1214,23 @@ a {
   }
 }
 
-/* Foundry persistence intake panel */
+.persist-panel {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 .persist-panel .persist-grid {
   display: grid;
   gap: var(--space-4);
+  min-width: 0;
+}
+
+.persist-field,
+.persist-field input,
+.persist-field textarea,
+.persist-field select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .persist-source-banner {

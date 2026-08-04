@@ -153,6 +153,11 @@ export default function RoutePersistPanel({ activeResult }: Props) {
         violations: local.violations,
       });
       setPersisting(false);
+      requestAnimationFrame(() => {
+        document
+          .getElementById("persist-validation-alert")
+          ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
       return;
     }
 
@@ -584,8 +589,12 @@ export default function RoutePersistPanel({ activeResult }: Props) {
       </div>
 
       {(inlineViolations.length > 0 || errorView) && (
-        <div className="persist-error" role="alert">
-          {errorView && (
+        <div
+          id="persist-validation-alert"
+          className="persist-error"
+          role="alert"
+          aria-live="assertive"
+        >          {errorView && (
             <>
               <strong>{errorView.title}</strong>
               <p>{errorView.message}</p>
