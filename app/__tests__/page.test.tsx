@@ -95,4 +95,111 @@ describe('Home page — control panel', () => {
     )
     expect(stored).toHaveLength(1)
   })
+
+  it('shows honest draft lifecycle labels, never execution claims', async () => {
+    render(<Home />)
+    fireEvent.change(screen.getByLabelText(/task \/ idea \/ request/i), {
+      target: { value: 'Build a photo gallery app' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('No draft yet').length).toBeGreaterThan(0)
+    })
+    expect(
+      screen.getAllByRole('button', { name: /generate draft/i }).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.getByText(/never executes the routed action/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/executed/i)).not.toBeInTheDocument()
+  })
+
+  it('shows Draft failed and persists the failed run on the task record', async () => {
+    render(<Home />)
+    fireEvent.change(screen.getByLabelText(/task \/ idea \/ request/i), {
+      target: { value: 'Build a photo gallery app' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+    await waitFor(() => {
+      expect(screen.getAllByText('No draft yet').length).toBeGreaterThan(0)
+    })
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: /generate draft/i })[0],
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Draft failed')).toBeInTheDocument()
+    })
+
+    const stored = JSON.parse(
+      localStorage.getItem('codex-control-panel-history-v2') ?? '[]',
+    ) as Array<{ runs?: Record<string, { status: string; at: string }> }>
+    expect(stored[0].runs?.['0']?.status).toBe('failed')
+    expect(stored[0].runs?.['0']?.at).toBeTruthy()
+  })
+
+  it('deduplicates rapid route submissions (clicks + keyboard)', async () => {
+    // A never-resolving fetch keeps the first request in flight while we
+    // hammer the button and the Cmd+Enter shortcut.
+    let resolveFetch: ((value: unknown) => void) | undefined
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<Home />)
+    const textarea = screen.getByLabelText(/task \/ idea \/ request/i)
+    fireEvent.change(textarea, { target: { value: 'Deploy the new build' } })
+
+    const routeButton = screen.getByRole('button', { name: /route task/i })
+    fireEvent.click(routeButton)
+    fireEvent.click(routeButton)
+    fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
+    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    resolveFetch?.({ ok: false, status: 500, json: async () => ({}) })
+    await waitFor(() => {
+      expect(screen.getAllByText(/selected tool:/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('sends the stored access key and learned corrections with routing requests', async () => {
+    localStorage.setItem(
+      'codex-control-panel-access-key',
+      JSON.stringify('secret-token'),
+    )
+    localStorage.setItem(
+      'codex-control-panel-corrections-v1',
+      JSON.stringify({ gallery: { documentation: 4 } }),
+    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<Home />)
+    fireEvent.change(screen.getByLabelText(/task \/ idea \/ request/i), {
+      target: { value: 'Build a photo gallery app' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /route task/i }))
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(
+      (init.headers as Record<string, string>)['x-codex-key'],
+    ).toBe('secret-token')
+    const payload = JSON.parse(String(init.body)) as {
+      correctionHints: Array<{ key: string; weight: number }>
+    }
+    expect(payload.correctionHints).toEqual([
+      { key: 'documentation', weight: 4 },
+    ])
+  })
 })
