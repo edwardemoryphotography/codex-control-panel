@@ -14,6 +14,7 @@ import {
   type RouteKey,
   type RouteResult,
 } from "@/lib/routing";
+import RoutePersistPanel from "@/components/RoutePersistPanel";
 
 const HISTORY_KEY = "codex-control-panel-history-v2";
 const THEME_KEY = "codex-control-panel-theme";
@@ -936,6 +937,8 @@ export default function ControlPanel() {
             )}
           </div>
         </section>
+
+        <RoutePersistPanel activeResult={activeResult} />
 
         <section className="panel" aria-label="History">
           <div className="panel-head">
