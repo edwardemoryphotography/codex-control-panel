@@ -1023,6 +1023,18 @@ export default function ControlPanel() {
                         <CopyIcon />
                         Copy card
                       </button>
+                      {runState?.text && (
+                        <button
+                          className="btn secondary"
+                          type="button"
+                          onClick={() =>
+                            copyText(runState.text, "Draft copied")
+                          }
+                        >
+                          <CopyIcon />
+                          Copy draft
+                        </button>
+                      )}
                     </div>
                     {(runState?.loading ||
                       runState?.text ||
