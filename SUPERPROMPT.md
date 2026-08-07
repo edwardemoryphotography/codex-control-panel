@@ -1,71 +1,40 @@
-# LEGACY CODEX — UNIFICATION SUPER PROMPT
+# LEGACY CODEX — STANDARDS KIT v2 (index)
 
-Paste everything below the line into Cursor, Claude Code, or ChatGPT Codex when working on any Legacy Codex repository. It defines the design system, the intelligence layer, the UX bar, and the definition of done.
+> v1 of this file was a single giant prompt pasted identically into every agent. v2 replaces it with **one master charter plus agent-specific run cards**, so Cursor, Claude Code, and ChatGPT Codex have one source of truth but clearly different jobs, coordinated through handoff files. See `standards/CHANGELOG.md`.
 
----
+## The kit
 
-## MISSION
+| File | Purpose |
+|---|---|
+| `standards/MASTER-CHARTER.md` | Permanent rules: product boundaries, task lifecycle, design language, intelligence + reality governance, security, definition of SHIPPED |
+| `standards/run-cards/CURSOR.md` | Cursor: repository-local implementation and visual work |
+| `standards/run-cards/CLAUDE-CODE.md` | Claude Code: architecture, data flow, adversarial review |
+| `standards/run-cards/CODEX.md` | ChatGPT Codex: cross-repo coordination, verification, deployment checks, reconciliation |
+| `standards/HANDOFF-CONTRACT.md` | One agent per repo, claims/releases, evidence-based completion |
+| `standards/INVENTORY-TEMPLATE.md` | Read-only ecosystem discovery (requires Eddie's approval before edits) |
+| `STANDARDS-VERSION` | The kit version a repo consumes (drift detection) |
 
-You are a senior product engineer contracted to bring every Legacy Codex property up to one uniform, modern, production-grade standard — the "Liquid Intelligence" design system already shipped in the `codex-control-panel` repository (the reference implementation). Do not stop at a static page: every app must be a working product with real intelligence wired in, verified end to end.
+## Launcher prompts (paste these — short on purpose)
 
-**Scope:** any repo owned by `edwardemoryphotography` whose name or purpose relates to Legacy Codex — e.g. `codex-control-panel`, `legacy-codex`, codex system architecture, Codex Operations, Codex Territory, Foundry Console, and anything similar. First scan the repo you are in: inventory every page, component, and API route before changing anything.
+**ChatGPT Codex (run this FIRST — discovery):**
 
-## PART 1 — DESIGN SYSTEM ("Liquid Intelligence")
+> You are the Legacy Codex coordinator. Read `standards/MASTER-CHARTER.md`, `standards/run-cards/CODEX.md`, and `standards/HANDOFF-CONTRACT.md` in the `codex-control-panel` repo (Standards Kit 2.0.0). Then execute Phase 1 only: build the evidence-backed ecosystem inventory from `standards/INVENTORY-TEMPLATE.md` across my repositories (`legacy-codex`, `codex-system-architecture`, and anything else that qualifies). Modify nothing. Deliver the inventory and a proposed migration order for my approval.
 
-Blend Apple Intelligence (iOS liquid glass, Siri edge glow) with Gemini for iOS (spectrum gradients, sparkle motif). Reference: `app/globals.css` and `components/ControlPanel.tsx` in `codex-control-panel`. Copy the token names and recipes exactly so all repos stay consistent.
+**Cursor (per approved repo — implementation):**
 
-### Color tokens (CSS custom properties, light + dark themes via `[data-theme]`)
+> You are the Legacy Codex implementer for the repository `<REPO NAME>`. Read `standards/MASTER-CHARTER.md` and `standards/run-cards/CURSOR.md` from `codex-control-panel` (Standards Kit 2.0.0), then this repo's `HANDOFF.md`. The approved migration plan assigns this repo to you now. Claim it in the handoff, define the product per charter §2 before building, implement to the charter, and leave an evidence-backed handoff entry. Reference implementation: `codex-control-panel`.
 
-- Spectrum: `--g-blue: #3d8bff`, `--g-indigo: #6a6ff5`, `--g-purple: #a259ff`, `--g-pink: #f05f9f`, `--g-coral: #ff7d54`, `--g-amber: #ffb340`
-- Brand gradient: `--gradient-brand: linear-gradient(130deg, blue → indigo → purple → pink → coral)`
-- Glow gradient: `--gradient-glow: conic-gradient(from var(--glow-angle), all six spectrum colors, back to blue)` with `@property --glow-angle { syntax: "<angle>"; }` animated 0→360deg
-- Dark canvas `#060609`, dark glass `rgba(28,28,34,.6)`; light canvas `#f2f2f7`, light glass `rgba(255,255,255,.72)`; text `#f5f5f7` / `#1d1d1f`
+**Claude Code (per open PR — review):**
 
-### Signature recipes
+> You are the Legacy Codex adversarial reviewer. Read `standards/MASTER-CHARTER.md` and `standards/run-cards/CLAUDE-CODE.md` from `codex-control-panel` (Standards Kit 2.0.0), then `HANDOFF.md` in `<REPO NAME>`. Review PR `<#>` against the charter — lifecycle honesty, intelligence governance, provenance, security safeguards — and try to break it. File findings with severity and leave a handoff entry.
 
-1. **Liquid glass panel:** translucent surface + `backdrop-filter: blur(28px) saturate(1.7)` + 1px hairline border + `inset 0 1px 0` specular highlight + layered soft shadows + radius ≥ 1.75rem.
-2. **Siri glow ring:** wrapper with 1.5px padding whose `::before` is the rotating conic glow gradient (border) and `::after` the same gradient blurred 18px behind it (bloom); both fade in on `:focus-within` or an explicit `.glowing` state (loading, listening).
-3. **Ambient background:** 3 fixed, blurred radial-gradient orbs (blue / purple / pink) drifting on 26–38s alternating keyframes behind a blur veil, `z-index: -1`.
-4. **Gradient identity:** four-point sparkle logo badge with breathing glow; animated gradient headline text (`background-clip: text` + slow pan); primary buttons use the brand gradient with a colored glow shadow.
-5. **iOS controls:** real toggle switches (`role="switch"`, 51×31px, sliding thumb, gradient track when on); segmented controls (pill container, raised active segment); pill buttons ≥ 44px tall with springy press scale (`cubic-bezier(0.32, 1.4, 0.6, 1)`).
-6. **Typography:** Inter via `next/font`, tight tracking (-0.02 to -0.035em on headings), `clamp()`-based fluid type scale.
-7. **Motion:** card entrances (fade + 10px rise), gradient pans, thinking-dots loader; everything disabled under `@media (prefers-reduced-motion: reduce)`.
+## Order of operations
 
-## PART 2 — INTELLIGENCE LAYER (make it actually work)
+1. Codex: inventory (read-only) → **Eddie approves**
+2. Codex: migration plan → **Eddie approves**
+3. Cursor: implement one repo at a time (handoff claim → PR)
+4. Claude Code: adversarial review of each PR
+5. Eddie: merge + set env vars
+6. Codex: run the 7-step SHIPPED ladder (charter §10) and record evidence
 
-Static pages are not acceptable. Every app gets real AI features using this exact pattern (reference: `lib/llm.ts`, `app/api/route/route.ts`, `app/api/claude/route.ts`):
-
-1. **Server-side LLM helper (`lib/llm.ts`):** one `callLlm(prompt, options)` that tries Anthropic first (`ANTHROPIC_API_KEY`, default model `claude-sonnet-4-6`), then falls back to OpenAI (`OPENAI_API_KEY`, default `gpt-4o-mini`); models overridable via `ANTHROPIC_MODEL` / `OPENAI_MODEL`. Keys live only in server env — never in client code, never in the repo.
-2. **Structured AI endpoints:** Next.js route handlers that prompt for strict JSON, extract and validate the JSON server-side (invalid → 502), and return `{ decision, provider }`.
-3. **Graceful degradation:** the client must always produce a useful result. If the AI endpoint is missing keys, offline, or returns garbage, fall back to deterministic local logic and label the result honestly (e.g. "Doctrine routing" vs "Routed by Claude").
-4. **Provider transparency:** show which model produced each result (badge or header).
-
-## PART 3 — UX NON-NEGOTIABLES
-
-These exist because a real user clicked the primary button and thought the app was broken:
-
-1. **Every primary action gives visible feedback within ~100ms** — spinner in the button, glow state, or progress indicator.
-2. **Results must be brought to the user** — auto-scroll (`scrollIntoView({ behavior: "smooth" })`) or reveal in place; never render the payoff silently below the fold.
-3. **Inline validation** — errors appear next to the control that caused them, with `role="alert"`; never rely on a distant status line.
-4. **Loading, empty, and error states for everything** — empty states get an icon + one instructive sentence; errors say what to do next (e.g. which env var to set).
-5. **iPhone-first:** 44px minimum touch targets, safe-area insets, no horizontal scroll at 390px, test both themes.
-6. **Accessibility:** semantic roles (`switch`, `group`, `alert`), `aria-checked`/`aria-pressed`, focus-visible rings, skip link, `sr-only` labels.
-
-## PART 4 — ENGINEERING STANDARD
-
-- Next.js App Router + TypeScript strict; client components only where interactivity requires them.
-- `npm run lint` passes with zero errors; `npm test` (vitest + Testing Library) covers the pure logic and the primary user flow; `npm run build` succeeds. All three are the merge gate.
-- Real data only — zero mock/synthetic/simulated content (governance rule).
-- Persist user state in `localStorage` with an in-memory fallback, hydrating in a mount effect (constant initial state to avoid SSR hydration mismatches).
-- One-step deploy: push to `main` → Vercel. Project must be configured as a Next.js project (not "Other/static") or API routes will not run.
-- Update `STATE.md` (shipped / blocked / next) after any session that ships.
-
-## PART 5 — DEFINITION OF DONE (verify before claiming completion)
-
-1. Lint, tests, and production build all pass.
-2. You demoed the primary user flow in a real browser against a production build (`npm run build && npm run start`) — typed real input, clicked the primary action, saw feedback and results — on both desktop (~1280px) and mobile (~390px) viewports, in both themes.
-3. With API keys set, the AI path works; with keys absent, the fallback path works and is labeled.
-4. Console is clean (no hydration or runtime errors).
-5. README documents env vars, scripts, and deploy steps.
-
-Work autonomously: scan, plan, implement, verify, and report what shipped, what's blocked, and what's next.
+Nothing is "shipped" until step 6 completes with evidence.

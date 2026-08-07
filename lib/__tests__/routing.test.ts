@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildResult,
   buildResultFromDecision,
+  correctionHints,
   parseAiDecision,
   applyCorrection,
   scoreRoute,
@@ -44,6 +45,11 @@ describe('buildResult (doctrine fallback)', () => {
     expect(result.prompts.length).toBeGreaterThanOrEqual(1)
     expect(result.primaryRoute).toBeTruthy()
     expect(result.source).toBe('doctrine')
+  })
+
+  it('assigns every result a task id', () => {
+    const result = buildResult(input())
+    expect(result.id).toMatch(/^T-/)
   })
 
   it('routes to architecture when nothing matches', () => {
@@ -119,6 +125,21 @@ describe('buildResultFromDecision', () => {
     expect(result.prompts[0].prompt).toContain('Deployment operator')
   })
 
+  it('records the deciding model when provided', () => {
+    const result = buildResultFromDecision(
+      input(),
+      {
+        routes: [{ key: 'execution', reason: '' }],
+        override: { active: false, reason: '' },
+        strength: 80,
+      },
+      'Claude',
+      'claude-sonnet-4-6',
+    )
+    expect(result.model).toBe('claude-sonnet-4-6')
+    expect(result.id).toMatch(/^T-/)
+  })
+
   it('builds a hybrid result when the AI returns two routes', () => {
     const result = buildResultFromDecision(
       input(),
@@ -179,6 +200,39 @@ describe('buildResultFromDecision', () => {
     )
     expect(result.override.active).toBe(false)
     expect(result.primaryRoute).toBe('Gemini')
+  })
+})
+
+describe('correctionHints (feeds Teach-router learning to AI routing)', () => {
+  it('returns nothing when no corrections apply to the wording', () => {
+    expect(correctionHints('Build a photo gallery', {})).toEqual([])
+    expect(
+      correctionHints('Build a photo gallery', {
+        unrelated: { documentation: 4 },
+      }),
+    ).toEqual([])
+  })
+
+  it('sums weights across matching tokens, sorted by weight', () => {
+    const hints = correctionHints('Build a photo gallery app', {
+      gallery: { documentation: 4, research: 1 },
+      photo: { documentation: 2 },
+    })
+    expect(hints[0]).toEqual({ key: 'documentation', weight: 6 })
+    expect(hints[1]).toEqual({ key: 'research', weight: 1 })
+  })
+
+  it('caps the number of hints at 4', () => {
+    const hints = correctionHints('Build a photo gallery app', {
+      gallery: {
+        documentation: 5,
+        research: 4,
+        deployment: 3,
+        architecture: 2,
+        system_state: 1,
+      },
+    })
+    expect(hints).toHaveLength(4)
   })
 })
 
