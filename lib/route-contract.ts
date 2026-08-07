@@ -83,10 +83,28 @@ export const routeProposalSchema = z.object({
   /** Correction support: the route this proposal supersedes. */
   supersedesRequestId: z.uuid().optional(),
   correctionReason: z.string().min(4).max(1000).optional(),
-  /** Create and link a Foundry actions work item alongside the route. */
+  /**
+   * Create and link a Foundry actions work item alongside the route.
+   * Accepted for forward compatibility, but currently inert: the
+   * persist_route_atomic RPC (legacy-codex migration
+   * 20260804020000_routing_control_plane_hardening.sql) raises
+   * action_link_disabled_pending_owner_policy if either this or actionId
+   * is passed through, because actions has no owner-only, workspace-aware
+   * policy yet. persistRoute() never forwards these two fields to the RPC
+   * and instead surfaces a warning when either is set.
+   */
   createAction: z.boolean().default(false),
-  /** Link an existing actions row instead of creating one. */
+  /** Link an existing actions row instead of creating one. Currently inert — see createAction. */
   actionId: z.uuid().optional(),
+  /**
+   * Caller-supplied idempotency key for safe retries across network
+   * failures (e.g. a client that times out waiting for a response and
+   * resends the identical proposal). persistRoute() generates one when
+   * absent, which makes that particular call idempotent-in-name-only —
+   * only a caller-supplied, stable key actually protects a retry from
+   * creating a duplicate route.
+   */
+  idempotencyKey: z.uuid().optional(),
 });
 
 export type RouteProposal = z.infer<typeof routeProposalSchema>;
@@ -204,14 +222,31 @@ export function validateRouteProposal(input: unknown): RouteValidation {
   return { ok: true, proposal };
 }
 
-/** Row shape inserted into routed_requests (snake_case, DB-canonical). */
-export function toRoutedRequestRow(
-  proposal: RouteProposal
+/**
+ * The jsonb payload persist_route_atomic(p_proposal jsonb) expects
+ * (legacy-codex migration 20260804020000_routing_control_plane_hardening.sql).
+ * That function is the only write path left for routed_requests /
+ * evidence_items — direct table INSERT/UPDATE was revoked from every
+ * client role once the RPC landed — so this is the sole boundary between
+ * the validated RouteProposal and the Foundry database.
+ *
+ * action_id / create_action are deliberately never included: the RPC
+ * raises action_link_disabled_pending_owner_policy if either key is
+ * present at all, so omitting them (rather than sending null/false) is
+ * what keeps a createAction: true proposal from hard-failing.
+ *
+ * idempotencyKey must be resolved (caller-supplied or generated) before
+ * calling this — the RPC rejects a missing key outright.
+ */
+export function toRouteProposalPayload(
+  proposal: RouteProposal,
+  idempotencyKey: string
 ): Record<string, unknown> {
   return {
     workspace_id: proposal.workspaceId,
-    action_id: proposal.actionId ?? null,
+    idempotency_key: idempotencyKey,
     supersedes_request_id: proposal.supersedesRequestId ?? null,
+    correction_reason: proposal.correctionReason ?? null,
     intent: proposal.intent,
     task_type: proposal.taskType,
     execution_lane: proposal.executionLane,
@@ -223,12 +258,12 @@ export function toRoutedRequestRow(
     required_evidence: proposal.requiredEvidence,
     rationale: proposal.rationale,
     confidence: proposal.confidence,
-    status: proposal.supersedesRequestId
-      ? "corrected"
-      : proposal.routeSource === "user"
-        ? "confirmed"
-        : "proposed",
     route_source: proposal.routeSource,
-    provenance: proposal.provenance,
+    evidence_kind: proposal.evidenceKind,
+    confirmations: {
+      destructive: proposal.confirmations.destructive ?? false,
+      protectedOperation: proposal.confirmations.protectedOperation ?? false,
+      publicExposure: proposal.confirmations.publicExposure ?? false,
+    },
   };
 }

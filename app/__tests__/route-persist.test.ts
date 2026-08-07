@@ -29,144 +29,106 @@ function proposal(overrides: Partial<RouteProposal> = {}): RouteProposal {
 }
 
 /**
- * Minimal stub of the Supabase query chains persistRoute uses. Records every
- * insert/update so tests can assert exactly what would be written. No real
- * network, no real records.
+ * persist_route_atomic is the only write path the schema exposes now — the
+ * app has nothing left to stub but the single RPC call. `onCall` lets each
+ * test control the returned {data, error} without reimplementing Postgres.
  */
-function stubDb(options: { workspaceExists?: boolean; originalStatus?: string | null } = {}) {
-  const { workspaceExists = true, originalStatus = null } = options;
-  const writes: Array<{ table: string; op: string; values: Record<string, unknown> }> = [];
-
+function stubDb(
+  onCall: (payload: Record<string, unknown>) => {
+    data?: Record<string, unknown> | null;
+    error?: { message: string } | null;
+  },
+) {
+  const calls: Array<{ fn: string; payload: Record<string, unknown> }> = [];
   const db = {
-    from(table: string) {
-      return {
-        select() {
-          return {
-            eq(_col: string, value: string) {
-              return {
-                async maybeSingle() {
-                  if (table === "workspaces") {
-                    return workspaceExists
-                      ? { data: { id: value, name: "Legacy Codex" }, error: null }
-                      : { data: null, error: null };
-                  }
-                  if (table === "routed_requests") {
-                    return originalStatus
-                      ? { data: { id: value, status: originalStatus }, error: null }
-                      : { data: null, error: null };
-                  }
-                  return { data: null, error: null };
-                },
-              };
-            },
-          };
-        },
-        insert(values: Record<string, unknown>) {
-          writes.push({ table, op: "insert", values });
-          const inserted = {
-            id: `${table}-row-1`,
-            ...values,
-          };
-          const result = {
-            select() {
-              return {
-                async single() {
-                  return { data: inserted, error: null };
-                },
-              };
-            },
-          };
-          // events insert is awaited directly without .select()
-          return Object.assign(
-            Promise.resolve({ data: inserted, error: null }),
-            result,
-          );
-        },
-        update(values: Record<string, unknown>) {
-          return {
-            async eq(_col: string, value: string) {
-              writes.push({ table, op: "update", values: { ...values, id: value } });
-              return { error: null };
-            },
-          };
-        },
-      };
+    rpc(fn: string, args: { p_proposal: Record<string, unknown> }) {
+      calls.push({ fn, payload: args.p_proposal });
+      const result = onCall(args.p_proposal);
+      return Promise.resolve({
+        data: result.data ?? null,
+        error: result.error ?? null,
+      });
     },
   } as unknown as SupabaseClient;
 
-  return { db, writes };
+  return { db, calls };
 }
 
-describe("persistRoute — the first vertical slice", () => {
-  it("persists route → event → pending evidence against a real workspace", async () => {
-    const { db, writes } = stubDb();
+describe("persistRoute — the single RPC write path", () => {
+  it("calls persist_route_atomic with a resolved idempotency key and returns its result as 201", async () => {
+    const { db, calls } = stubDb(() => ({
+      data: {
+        routedRequest: { id: "route-1", status: "confirmed" },
+        workspace: { id: WORKSPACE_ID, name: "Legacy Codex" },
+        actionId: null,
+        eventLogged: true,
+        evidence: { id: "evidence-1", status: "pending" },
+        corrected: null,
+        warnings: [],
+        replayed: false,
+      },
+    }));
+
     const result = await persistRoute(db, proposal());
 
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.fn).toBe("persist_route_atomic");
+    expect(typeof calls[0]?.payload.idempotency_key).toBe("string");
+    expect(calls[0]?.payload.workspace_id).toBe(WORKSPACE_ID);
+    expect(calls[0]?.payload.intent).toContain("stale project documentation");
+
     expect(result.status).toBe(201);
-
-    const routeWrite = writes.find((w) => w.table === "routed_requests");
-    expect(routeWrite?.values.intent).toContain("stale project documentation");
-    expect(routeWrite?.values.status).toBe("proposed");
-    expect(routeWrite?.values.route_source).toBe("model");
-
-    const eventWrite = writes.find((w) => w.table === "events");
-    expect(eventWrite?.values.action).toBe("route.persisted");
-    expect(eventWrite?.values.target_type).toBe("routed_request");
-
-    const evidenceWrite = writes.find((w) => w.table === "evidence_items");
-    expect(evidenceWrite?.values.status).toBe("pending");
-    expect(evidenceWrite?.values.provenance).toBe("unknown");
     expect(result.body.eventLogged).toBe(true);
+    expect((result.body.routedRequest as { status: string }).status).toBe(
+      "confirmed",
+    );
   });
 
-  it("rejects workspaces that do not exist — invented projects never persist", async () => {
-    const { db, writes } = stubDb({ workspaceExists: false });
+  it("uses the caller-supplied idempotency key when present instead of generating one", async () => {
+    const KEY = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const { db, calls } = stubDb(() => ({
+      data: { routedRequest: {}, evidence: {}, replayed: false, warnings: [] },
+    }));
+
+    await persistRoute(db, proposal({ idempotencyKey: KEY }));
+
+    expect(calls[0]?.payload.idempotency_key).toBe(KEY);
+  });
+
+  it("returns 200 (not 201) on an idempotency-key replay — nothing new was created", async () => {
+    const { db } = stubDb(() => ({
+      data: {
+        routedRequest: { id: "route-1", status: "confirmed" },
+        evidence: { id: "evidence-1", status: "pending" },
+        workspace: { id: WORKSPACE_ID },
+        corrected: null,
+        eventLogged: true,
+        replayed: true,
+      },
+    }));
+
+    const result = await persistRoute(db, proposal());
+    expect(result.status).toBe(200);
+    expect(result.body.replayed).toBe(true);
+    // The replay branch omits `warnings` entirely; persistRoute must not crash on that.
+    expect(result.body.warnings).toEqual([]);
+  });
+
+  it("maps unknown_workspace to 422 — invented workspaces never persist", async () => {
+    const { db } = stubDb(() => ({
+      error: { message: `unknown_workspace:${WORKSPACE_ID}` },
+    }));
+
     const result = await persistRoute(db, proposal());
     expect(result.status).toBe(422);
     expect(result.body.code).toBe("unknown_workspace");
-    expect(writes).toHaveLength(0);
   });
 
-  it("creates and links a work item when requested", async () => {
-    const { db, writes } = stubDb();
-    const result = await persistRoute(db, proposal({ createAction: true }));
-    expect(result.status).toBe(201);
-    const actionWrite = writes.find((w) => w.table === "actions");
-    expect(actionWrite?.values.status).toBe("TODO");
-    const routeWrite = writes.find((w) => w.table === "routed_requests");
-    expect(routeWrite?.values.action_id).toBe("actions-row-1");
-  });
+  it("maps correction_target_superseded to 409", async () => {
+    const { db } = stubDb(() => ({
+      error: { message: `correction_target_superseded:${ORIGINAL_ID}` },
+    }));
 
-  it("corrections append a new row and supersede the original without deleting it", async () => {
-    const { db, writes } = stubDb({ originalStatus: "confirmed" });
-    const result = await persistRoute(
-      db,
-      proposal({
-        supersedesRequestId: ORIGINAL_ID,
-        correctionReason: "Owner rerouted to research.",
-      }),
-    );
-    expect(result.status).toBe(201);
-
-    const routeWrite = writes.find(
-      (w) => w.table === "routed_requests" && w.op === "insert",
-    );
-    expect(routeWrite?.values.status).toBe("corrected");
-    expect(routeWrite?.values.supersedes_request_id).toBe(ORIGINAL_ID);
-
-    // The original is updated to superseded — never deleted.
-    const update = writes.find(
-      (w) => w.table === "routed_requests" && w.op === "update",
-    );
-    expect(update?.values.status).toBe("superseded");
-    expect(writes.some((w) => w.op === "delete")).toBe(false);
-
-    const eventWrite = writes.find((w) => w.table === "events");
-    expect(eventWrite?.values.action).toBe("route.corrected");
-  });
-
-  it("refuses to correct a route that is already superseded", async () => {
-    const { db } = stubDb({ originalStatus: "superseded" });
     const result = await persistRoute(
       db,
       proposal({
@@ -176,6 +138,77 @@ describe("persistRoute — the first vertical slice", () => {
     );
     expect(result.status).toBe(409);
     expect(result.body.code).toBe("correction_target_superseded");
+  });
+
+  it("maps correction_target_missing to 409", async () => {
+    const { db } = stubDb(() => ({
+      error: { message: `correction_target_missing:${ORIGINAL_ID}` },
+    }));
+
+    const result = await persistRoute(
+      db,
+      proposal({
+        supersedesRequestId: ORIGINAL_ID,
+        correctionReason: "Owner rerouted to research.",
+      }),
+    );
+    expect(result.status).toBe(409);
+    expect(result.body.code).toBe("correction_target_missing");
+  });
+
+  it("passes supersedes_request_id and correction_reason through for corrections", async () => {
+    const { db, calls } = stubDb(() => ({
+      data: {
+        routedRequest: { id: "route-2", status: "corrected" },
+        evidence: {},
+        corrected: ORIGINAL_ID,
+        eventLogged: true,
+        replayed: false,
+        warnings: [],
+      },
+    }));
+
+    const result = await persistRoute(
+      db,
+      proposal({
+        supersedesRequestId: ORIGINAL_ID,
+        correctionReason: "Owner rerouted to research.",
+      }),
+    );
+
+    expect(calls[0]?.payload.supersedes_request_id).toBe(ORIGINAL_ID);
+    expect(calls[0]?.payload.correction_reason).toBe(
+      "Owner rerouted to research.",
+    );
+    expect(result.status).toBe(201);
+    expect(result.body.corrected).toBe(ORIGINAL_ID);
+  });
+
+  it("warns instead of failing when createAction is requested — action linking is disabled at the DB layer", async () => {
+    const { db, calls } = stubDb(() => ({
+      data: { routedRequest: {}, evidence: {}, replayed: false, warnings: [] },
+    }));
+
+    const result = await persistRoute(db, proposal({ createAction: true }));
+
+    expect(calls[0]?.payload).not.toHaveProperty("action_id");
+    expect(calls[0]?.payload).not.toHaveProperty("create_action");
+    expect(result.status).toBe(201);
+    expect(
+      (result.body.warnings as string[]).some((w) =>
+        w.includes("Work item linking is disabled"),
+      ),
+    ).toBe(true);
+  });
+
+  it("falls back to 502 for an unrecognized RPC error", async () => {
+    const { db } = stubDb(() => ({
+      error: { message: 'new row for relation "routed_requests" violates check constraint "routed_requests_nonblank_facts"' },
+    }));
+
+    const result = await persistRoute(db, proposal());
+    expect(result.status).toBe(502);
+    expect(result.body.code).toBe("route_persistence_failed");
   });
 });
 
