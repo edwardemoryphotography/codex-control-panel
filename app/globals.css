@@ -1251,6 +1251,124 @@ a {
   }
 }
 
+.persist-panel {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+.persist-panel .persist-grid {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.persist-field,
+.persist-field input,
+.persist-field textarea,
+.persist-field select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.persist-source-banner {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  font-size: var(--text-sm);
+}
+
+.persist-source-banner[data-source="doctrine_fallback"] {
+  border-color: color-mix(in srgb, var(--g-amber) 45%, var(--color-border));
+}
+
+.persist-field input,
+.persist-field textarea,
+.persist-field select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-solid);
+  color: var(--color-text);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+}
+
+.persist-field textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.persist-confirmations,
+.persist-correction,
+.persist-auth {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.persist-confirmations h3,
+.persist-correction h3,
+.persist-auth h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+}
+
+.persist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.persist-error {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-error) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-text);
+}
+
+.persist-error ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.2rem;
+}
+
+.persist-success {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-success) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+}
+
+.persist-success ul {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: 1.2rem;
+}
+
+.token-ready {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+@media (min-width: 720px) {
+  .persist-panel .persist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .persist-panel .persist-field:has(textarea),
+  .persist-panel .persist-field:has(#persist-intent),
+  .persist-panel .persist-field:has(#persist-rationale),
+  .persist-panel .persist-field:has(#persist-correction-reason) {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
