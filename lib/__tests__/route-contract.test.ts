@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  toRoutedRequestRow,
+  toRouteProposalPayload,
   validateRouteProposal,
 } from "../route-contract";
 
@@ -45,9 +45,10 @@ describe("validateRouteProposal — acceptance", () => {
       routeSource: "doctrine_fallback",
     });
     if (!result.ok) throw new Error("expected valid proposal");
-    expect(toRoutedRequestRow(result.proposal).route_source).toBe(
-      "doctrine_fallback",
-    );
+    expect(
+      toRouteProposalPayload(result.proposal, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+        .route_source,
+    ).toBe("doctrine_fallback");
   });
 });
 
@@ -131,33 +132,66 @@ describe("validateRouteProposal — deterministic rejection of untrusted output"
   });
 });
 
-describe("toRoutedRequestRow — status semantics", () => {
-  it("model proposals persist as proposed", () => {
+describe("toRouteProposalPayload — persist_route_atomic(jsonb) contract", () => {
+  const KEY = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+
+  it("carries the caller-provided idempotency key and workspace/intent facts through", () => {
     const result = validateRouteProposal(validProposal);
     if (!result.ok) throw new Error("expected valid");
-    expect(toRoutedRequestRow(result.proposal).status).toBe("proposed");
+    const payload = toRouteProposalPayload(result.proposal, KEY);
+    expect(payload.idempotency_key).toBe(KEY);
+    expect(payload.workspace_id).toBe(validProposal.workspaceId);
+    expect(payload.intent).toBe(validProposal.intent);
+    expect(payload.task_type).toBe(validProposal.taskType);
   });
 
-  it("user-sourced routes persist as confirmed", () => {
-    const result = validateRouteProposal({
-      ...validProposal,
-      routeSource: "user",
-    });
+  it("never leaves status assignment to the app — the RPC alone decides confirmed/corrected/blocked_policy", () => {
+    const result = validateRouteProposal(validProposal);
     if (!result.ok) throw new Error("expected valid");
-    expect(toRoutedRequestRow(result.proposal).status).toBe("confirmed");
+    expect(toRouteProposalPayload(result.proposal, KEY)).not.toHaveProperty(
+      "status",
+    );
   });
 
-  it("corrections persist as corrected and reference the original", () => {
+  it("carries supersedes_request_id and correction_reason for corrections", () => {
     const result = validateRouteProposal({
       ...validProposal,
       supersedesRequestId: "22222222-2222-4222-8222-222222222222",
       correctionReason: "Owner rerouted to research after reviewing the proposal.",
     });
     if (!result.ok) throw new Error("expected valid");
-    const row = toRoutedRequestRow(result.proposal);
-    expect(row.status).toBe("corrected");
-    expect(row.supersedes_request_id).toBe(
+    const payload = toRouteProposalPayload(result.proposal, KEY);
+    expect(payload.supersedes_request_id).toBe(
       "22222222-2222-4222-8222-222222222222",
     );
+    expect(payload.correction_reason).toBe(
+      "Owner rerouted to research after reviewing the proposal.",
+    );
+  });
+
+  it("maps confirmations through with camelCase subkeys, defaulting unset flags to false", () => {
+    const result = validateRouteProposal({
+      ...validProposal,
+      sensitivity: "restricted",
+      confirmations: { publicExposure: true },
+    });
+    if (!result.ok) throw new Error("expected valid");
+    const payload = toRouteProposalPayload(result.proposal, KEY);
+    expect(payload.confirmations).toEqual({
+      destructive: false,
+      protectedOperation: false,
+      publicExposure: true,
+    });
+  });
+
+  it("never includes action_id or create_action — the RPC rejects either key outright", () => {
+    const result = validateRouteProposal({
+      ...validProposal,
+      createAction: true,
+    });
+    if (!result.ok) throw new Error("expected valid");
+    const payload = toRouteProposalPayload(result.proposal, KEY);
+    expect(payload).not.toHaveProperty("action_id");
+    expect(payload).not.toHaveProperty("create_action");
   });
 });

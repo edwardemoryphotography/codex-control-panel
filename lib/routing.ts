@@ -28,7 +28,24 @@ export type PromptPart = {
   prompt: string;
 };
 
+/**
+ * Persisted record of one AI draft generation for a routed step. Stored on
+ * the task record so history and exports preserve the lifecycle.
+ */
+export type StepRun = {
+  status: "generated" | "failed";
+  provider?: string;
+  /** Exact model that produced the draft. */
+  model?: string;
+  output?: string;
+  error?: string;
+  /** ISO timestamp of when the run finished. */
+  at: string;
+};
+
 export type RouteResult = {
+  /** Task ID, e.g. "T-ABC123XY" — carried through history and exports. */
+  id?: string;
   createdAt: string;
   task: string;
   mode: string;
@@ -41,6 +58,10 @@ export type RouteResult = {
   prompts: PromptPart[];
   /** What decided the route: "Claude", "GPT", or "doctrine" (local fallback). */
   source?: string;
+  /** Exact model that produced the decision, when AI-routed. */
+  model?: string;
+  /** AI draft generations per prompt index, persisted with the task. */
+  runs?: Record<number, StepRun>;
 };
 
 export type AiRouteDecision = {
@@ -439,6 +460,12 @@ export type BuildResultInput = {
   corrections: Corrections;
 };
 
+export function newTaskId(): string {
+  const time = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `T-${time}-${rand}`;
+}
+
 function overrideRouteItem(
   currentTool: string,
   reason: string,
@@ -463,6 +490,7 @@ function composeResult(
   override: { active: boolean; reason: string },
   strength: number,
   source: string,
+  model?: string,
 ): RouteResult {
   const prompts = routeSet.map((route, index) => ({
     part:
@@ -477,6 +505,7 @@ function composeResult(
   }));
 
   return {
+    id: newTaskId(),
     createdAt: new Date().toISOString(),
     task: input.task,
     mode:
@@ -493,6 +522,7 @@ function composeResult(
     override,
     prompts,
     source,
+    model,
   };
 }
 
@@ -580,6 +610,7 @@ export function buildResultFromDecision(
   input: BuildResultInput,
   decision: AiRouteDecision,
   source: string,
+  model?: string,
 ): RouteResult {
   const override =
     input.overrideEnabled && decision.override.active
@@ -613,7 +644,45 @@ export function buildResultFromDecision(
     ].slice(0, input.hybridEnabled ? 2 : 1);
   }
 
-  return composeResult(input, routeSet, override, decision.strength, source);
+  return composeResult(
+    input,
+    routeSet,
+    override,
+    decision.strength,
+    source,
+    model,
+  );
+}
+
+export type CorrectionHint = { key: RouteKey; weight: number };
+
+/**
+ * Compact summary of the user's learned corrections that apply to this
+ * task's wording, suitable for sending to the AI classifier so "Teach
+ * router" affects AI routing, not just the doctrine fallback.
+ */
+export function correctionHints(
+  task: string,
+  corrections: Corrections,
+): CorrectionHint[] {
+  const totals = new Map<RouteKey, number>();
+  for (const tok of salientTokens(task)) {
+    const bias = corrections[tok];
+    if (!bias) continue;
+    for (const [key, weight] of Object.entries(bias)) {
+      if (typeof weight === "number" && weight > 0) {
+        totals.set(
+          key as RouteKey,
+          (totals.get(key as RouteKey) ?? 0) + weight,
+        );
+      }
+    }
+  }
+  return [...totals.entries()]
+    .map(([key, weight]) => ({ key, weight: Math.round(weight) }))
+    .filter((hint) => hint.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 4);
 }
 
 export function applyCorrection(
