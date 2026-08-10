@@ -494,14 +494,18 @@ export default function RoutePersistPanel({ activeResult }: Props) {
         <div className="switch-row">
           <div className="switch-copy">
             <strong>Create linked actions work item</strong>
-            <span>Optional Foundry actions row linked to this route</span>
+            <span>
+              Not supported yet — the backend rejects this at the database
+              layer, so persisting always proceeds without an actions link.
+            </span>
           </div>
           <button
             className="switch"
             type="button"
             role="switch"
+            disabled
             aria-checked={draft.createAction}
-            aria-label="Create linked actions work item"
+            aria-label="Create linked actions work item (not yet supported)"
             onClick={() => patch("createAction", !draft.createAction)}
           >
             <span className="switch-thumb" />
