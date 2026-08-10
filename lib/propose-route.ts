@@ -98,7 +98,9 @@ export function draftProposalFromRouteResult(
     },
     supersedesRequestId: "",
     correctionReason: "",
-    createAction: true,
+    // The backend strips createAction and only surfaces a warning — action
+    // linking isn't supported yet, so a new draft must not default to on.
+    createAction: false,
   };
 }
 

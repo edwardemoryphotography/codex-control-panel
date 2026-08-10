@@ -40,6 +40,11 @@ describe("propose-route helpers", () => {
     expect(routeSourceLabel(draft.routeSource)).toMatch(/not AI-model routing/i);
   });
 
+  it("does not default a new draft to createAction: true — the backend never forwards it and only warns", () => {
+    const draft = draftProposalFromRouteResult(baseResult, "");
+    expect(draft.createAction).toBe(false);
+  });
+
   it("includes correction fields only when superseding", () => {
     const draft = draftProposalFromRouteResult(baseResult, "11111111-1111-4111-8111-111111111111");
     draft.supersedesRequestId = "22222222-2222-4222-8222-222222222222";
