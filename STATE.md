@@ -1,6 +1,8 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-08-04_
+_Last updated: 2026-08-10_
+
+**This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). `legacy-codex` previously kept an independently-drifting copy; it now keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
 
@@ -16,6 +18,8 @@ _Last updated: 2026-08-04_
 - **Starforge** → working prompt → Claude API → live HTML preview loop
 - **MacBook file system** → dead Downloads symlink replaced; automated file organizer scripts verified
 - **Legacy Codex** → live at `legacy-codex.vercel.app`
+- **Legacy Codex hygiene pass (2026-08-04)** → lint warnings 32 → 0, dead code removed, Supabase client and tab components fully typed; lint + 24 tests + production build all green (absorbed from `legacy-codex/STATE.md` main, 2026-08-10)
+- **Legacy Codex PR #47 (routing control plane) live-DB verification (2026-08-07)** → ran all 14 read-only checks from `supabase/verification/routing_control_plane_checks.sql` against `foundry-console` (`pkydkbuodikttfeawqsw`): RLS, anon-zero-privilege, delete guards, correction-chain integrity, idempotency-key uniqueness, and `persist_route_atomic` grants all verified as PR #47 intended. Found and fixed a real gap: the hardening migration's final revoke/drop/trigger step had never taken effect; applied a follow-up migration closing it, re-verified (absorbed from `legacy-codex/STATE.md` main, 2026-08-10)
 
 ---
 
@@ -41,9 +45,22 @@ _Last updated: 2026-08-04_
 
 ## 🔒 FROZEN — DO NOT TOUCH
 
-- **Legacy Codex `app/index.html`** → FREEZE SPEC active; no rewrite unless Eddie explicitly says "REWRITE THE APP CODE"
+- **Legacy Codex application source** → FREEZE SPEC active; no rewrite unless Eddie explicitly says "REWRITE THE APP CODE". Historically written as `app/index.html` in every copy of this rule (this file, `legacy-codex`'s own docs, `Artful-Intelligence/AGENTS.md`, and the user's global CLAUDE.md) — **that path does not exist in the current `legacy-codex` repo** (it's a Next.js App Router app; the real entry point is `src/app/page.tsx` / `src/components/CodexApp.tsx`). Flagged during the 2026-08-10 standards audit rather than propagated further. Until Eddie confirms the current frozen scope, treat the freeze as covering everything under `legacy-codex/src/`.
 - **Artful Intelligence brand launch** → on hold pending Eddie's decision on @Freddy_v association
 - **AI-powered CMS architecture** (Claude Code + Firecrawl + MongoDB) → parked; 5 scoping questions pending; no buyer yet
+
+---
+
+## 🗂 CANONICAL REPOS
+
+Where each project actually lives, so no agent edits a stale duplicate. Absorbed 2026-08-10 from `Artful-Intelligence/AGENTS.md` § Agent Guardrails (repeated there and in the user's global CLAUDE.md).
+
+| Project | Canonical | Notes |
+|---|---|---|
+| Artful Intelligence | `~/Development/Artful-Intelligence` | Older copies archived under `~/Development/archive/` — do not edit those |
+| Legacy Codex | `~/legacy-codex` | Production truth is `https://legacy-codex.vercel.app`; compare local tree to `origin/main` before assuming it matches production — a stale duplicate Vercel project (`edwardemory-photography-legacy-codex`) also exists and should be ignored |
+| Codex Control Panel | `~/Development/codex-control-panel` | This repo — reference implementation of the Standards Kit |
+| Codex System Architecture | `~/Development/codex-system-architecture` | Visual documentation SPA; separate Supabase project (`supabase-indigo-paddle`) from `legacy-codex`'s `foundry-console` (`pkydkbuodikttfeawqsw`) — do not assume shared tables |
 
 ---
 

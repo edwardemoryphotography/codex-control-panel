@@ -1,6 +1,12 @@
 # RUN CARD — CLAUDE CODE (Architect / Adversarial Reviewer)
 
-**Read first:** `standards/MASTER-CHARTER.md`, then the target repo's `HANDOFF.md`. Charter overrides this card; Eddie overrides everything.
+**Read first:** `standards/MASTER-CHARTER.md` and `standards/AGENT-BEHAVIOR.md`, then the target repo's `HANDOFF.md`. Charter overrides this card; Eddie overrides everything.
+
+## Tooling notes (absorbed 2026-08-10 from repo-local copies in Artful-Intelligence and legacy-codex)
+
+- Don't add `mcpServers` entries directly to a `settings.json` — use `claude mcp add <name> <command> -- <args>` instead.
+- When a session starts from the home directory but the work belongs to a specific repo, move to that repo's root before edits, installs, or commits.
+- Before recommending or editing a repo, confirm you're in the **canonical** copy, not an archived duplicate (e.g. `~/Development/archive/`). Canonical locations are tracked in `codex-control-panel/STATE.md` § CANONICAL REPOS.
 
 ## Role
 

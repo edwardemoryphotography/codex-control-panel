@@ -1,6 +1,6 @@
 # HANDOFF — codex-control-panel
 
-Governed by `standards/HANDOFF-CONTRACT.md` · Standards Kit version: 2.0.0
+Governed by `standards/HANDOFF-CONTRACT.md` · Standards Kit version: 2.1.0
 This repository is the **reference implementation** of the Liquid Intelligence standard.
 
 ---
@@ -31,3 +31,16 @@ Status: implemented — PR open, not yet shipped
 Evidence: `npm run lint` clean; `npm test` 54/54; `npm run build` green; `npm audit` 0 vulns; prod-build probes of the full auth/validation matrix (401/503-lock/400/413/502-auth all correct); cache-bypassed browser verification of draft-honesty UI + access-key persistence, console clean
 Gaps (blocked on Eddie): Vercel needs ANTHROPIC_API_KEY (valid — the current one 401s), OPENAI_API_KEY, APP_ACCESS_TOKEN; live-deployment verification (charter §10 steps 2–7) not yet run
 Next: Eddie re-pastes a valid Anthropic key + sets APP_ACCESS_TOKEN in Vercel, merges PR #8 when ready → Codex runs the SHIPPED ladder
+
+### [2026-08-10 UTC] AGENT: Claude Code — CLAIM
+Branch: ao/codex-control-panel-2/standards-consolidation
+Scope: cross-repo standards audit and consolidation (Standards Kit 2.0.0 → 2.1.0) across codex-control-panel, legacy-codex, codex-system-architecture, Artful-Intelligence
+Status: implementing
+
+### [2026-08-10 UTC] AGENT: Claude Code — RELEASE
+Branch: ao/codex-control-panel-2/standards-consolidation · PR: (opening)
+Scope: audited every agent/standards/state doc in all four repos; found legacy-codex PR #35 in active merge conflict with its own main (reconciled rather than blind-merged), a phantom FREEZE SPEC path copied into 4+ docs (flagged, not silently propagated), and STATE.md independently drifting in 3 copies (hub now canonical). Absorbed codex-system-architecture's generic Karpathy-derived agent-behavior guidance into new `standards/AGENT-BEHAVIOR.md`; absorbed Artful-Intelligence's canonical-repo facts and Claude-Code tooling tips into `STATE.md` § CANONICAL REPOS and `run-cards/CLAUDE-CODE.md`; bumped Standards Kit to 2.1.0 with a CHANGELOG entry naming every source repo.
+Status: implemented — PR open, not yet shipped
+Evidence: full audit reported to Eddie in-session before any edits; CHANGELOG.md 2.1.0 entry; diff of standards/, STATE.md, SUPERPROMPT.md, STANDARDS-VERSION
+Gaps: satellite-repo PRs (legacy-codex, codex-system-architecture, Artful-Intelligence) are separate, independently reviewable/vetoable PRs — see each repo's own HANDOFF/PR for status
+Next: Eddie reviews and merges per repo; no code/product behavior changed, docs only

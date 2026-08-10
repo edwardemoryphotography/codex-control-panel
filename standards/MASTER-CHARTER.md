@@ -1,7 +1,9 @@
 # LEGACY CODEX — MASTER CHARTER
 
-**Standards Kit version: 2.0.0** · Canonical home: `codex-control-panel/standards/` (until extracted to its own package)
-**Precedence:** Eddie's explicit instructions > this charter > run cards > anything else. Agents read this charter and their run card before touching any repository.
+**Standards Kit version: 2.1.0** · Canonical home: `codex-control-panel/standards/` (until extracted to its own package)
+**Precedence:** Eddie's explicit instructions > this charter > `standards/AGENT-BEHAVIOR.md` (baseline agent conduct) > run cards > anything else. Agents read this charter, `AGENT-BEHAVIOR.md`, and their run card before touching any repository.
+
+**Adoption is not automatic.** A repo listed in §1 is only bound by the *sections it actually implements*. §4 (Liquid Intelligence design tokens) and §3/§5 (AI task lifecycle) apply only to repos that build that product surface — as of 2.1.0, that's `codex-control-panel` alone. `legacy-codex` and `codex-system-architecture` are named in §1 for coordination/handoff purposes (§9–10) but run their own established designs and are not expected to restyle to match §4, nor to retrofit an AI task lifecycle they don't have. A repo's own pointer file states which sections bind it.
 
 ---
 
@@ -102,7 +104,7 @@ Where practical, also record **source**, **last-verified date**, and **public/pr
 
 ## 8. Engineering gates
 
-Next.js App Router + TypeScript strict. `npm run lint` (0 errors), `npm test` (covering pure logic + the primary flow), and `npm run build` all pass — this is the merge gate. Persist client state in `localStorage` with an in-memory fallback, hydrating in a mount effect with constant initial state (no SSR hydration mismatches). One-step deploy: push to `main` → Vercel, configured as a Next.js project. Update `STATE.md` after any session that ships, blocks, or unblocks.
+Next.js App Router + TypeScript strict. `npm run lint` (0 errors), `npm test` (covering pure logic + the primary flow), and `npm run build` all pass — this is the merge gate. Persist client state in `localStorage` with an in-memory fallback, hydrating in a mount effect with constant initial state (no SSR hydration mismatches). One-step deploy: push to `main` → Vercel, configured as a Next.js project. **`codex-control-panel/STATE.md` is the single canonical cross-project status file** — after any session that ships, blocks, or unblocks something, update it there, not in a satellite repo's own copy. Satellite repos keep only a short local pointer plus genuinely repo-local notes (see their own `STATE.md`).
 
 ## 9. Process: discovery before modification
 
