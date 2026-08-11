@@ -18,6 +18,15 @@ import {
 } from "@/lib/routing";
 import RoutePersistPanel from "@/components/RoutePersistPanel";
 
+type ActionRow = {
+  action_title: string;
+  status: string;
+  context_complexity?: string | number;
+  portfolio_segment?: string;
+  priority_weight?: number;
+  is_next_action?: boolean;
+};
+
 const HISTORY_KEY = "codex-control-panel-history-v2";
 const THEME_KEY = "codex-control-panel-theme";
 const CORRECT_KEY = "codex-control-panel-corrections-v1";
@@ -217,6 +226,45 @@ export default function ControlPanel() {
   // so deriving the initial state from it causes a hydration mismatch.
   const [storageStatus, setStorageStatus] = useState("Checking session memory…");
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [sessionMode, setSessionMode] = useState<"high" | "low">("low");
+  const [nextActions, setNextActions] = useState<ActionRow[] | null>(null);
+  const [actionsStatus, setActionsStatus] = useState("Loading next actions…");
+
+  useEffect(() => {
+    let cancelled = false;
+    setActionsStatus("Loading next actions…");
+
+    fetch(`/api/actions?mode=${sessionMode}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          let message = `Server error: ${res.status}`;
+          try {
+            const errorData = await res.json();
+            if (errorData?.error) message = errorData.error;
+          } catch {
+            // response body wasn't JSON; keep the status-based message
+          }
+          throw new Error(message);
+        }
+        return res.json();
+      })
+      .then((data: { actions?: ActionRow[]; error?: string }) => {
+        if (cancelled) return;
+        setNextActions(data.actions ?? []);
+        setActionsStatus(data.actions?.length ? "" : "No actions returned.");
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setNextActions(null);
+        setActionsStatus(
+          error instanceof Error ? error.message : "Failed to load actions",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionMode]);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect --
@@ -841,6 +889,59 @@ export default function ControlPanel() {
         </section>
 
         <section className="panel" aria-label="Routing map">
+          <div className="panel-head">
+            <h2>Next up (Codex)</h2>
+            <span className="help">Live from Supabase actions</span>
+          </div>
+          <div className="toggles" style={{ marginBottom: "var(--space-4)" }}>
+            <label className="toggle">
+              <input
+                type="radio"
+                name="sessionMode"
+                checked={sessionMode === "low"}
+                onChange={() => setSessionMode("low")}
+              />
+              Low energy
+            </label>
+            <label className="toggle">
+              <input
+                type="radio"
+                name="sessionMode"
+                checked={sessionMode === "high"}
+                onChange={() => setSessionMode("high")}
+              />
+              High energy
+            </label>
+          </div>
+          {!nextActions || nextActions.length === 0 ? (
+            <div className="empty">{actionsStatus}</div>
+          ) : (
+            <div className="history-list">
+              {nextActions.map((action, index) => (
+                <article
+                  className="history-item"
+                  key={`${action.action_title}-${index}`}
+                >
+                  <div className="history-top">
+                    <div className="history-title">
+                      {action.is_next_action ? "▶ " : ""}
+                      {action.action_title}
+                    </div>
+                    <span className="pill">{action.status}</span>
+                  </div>
+                  <div className="history-meta">
+                    {action.portfolio_segment ?? "—"}
+                    {action.priority_weight != null
+                      ? ` • priority ${action.priority_weight}`
+                      : ""}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="panel">
           <div className="panel-head">
             <h2>Routing map</h2>
             <span className="eyebrow">Doctrine</span>
