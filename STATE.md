@@ -45,7 +45,7 @@ _Last updated: 2026-08-10_
 
 ## 🔒 FROZEN — DO NOT TOUCH
 
-- **Legacy Codex application source** → FREEZE SPEC active; no rewrite unless Eddie explicitly says "REWRITE THE APP CODE". Historically written as `app/index.html` in every copy of this rule (this file, `legacy-codex`'s own docs, `Artful-Intelligence/AGENTS.md`, and the user's global CLAUDE.md) — **that path does not exist in the current `legacy-codex` repo** (it's a Next.js App Router app; the real entry point is `src/app/page.tsx` / `src/components/CodexApp.tsx`). Flagged during the 2026-08-10 standards audit rather than propagated further. Until Eddie confirms the current frozen scope, treat the freeze as covering everything under `legacy-codex/src/`.
+- **Legacy Codex FREEZE SPEC** → in `legacy-codex`, don't rewrite `src/app/` (`page.tsx`, `layout.tsx`, `globals.css`, `api/`), `src/components/`, `src/lib/`, or `src/hooks/` unless Eddie explicitly says "REWRITE THE APP CODE". Docs, config, and coordination files are not frozen. **Corrected 2026-08-10:** this rule previously named `app/index.html`, which does not exist in the repo (it's Next.js App Router; the real entry is `src/app/page.tsx`) — the freeze was guarding a phantom path while the actual app code sat unprotected. Eddie has approved this corrected wording. **Do not restore the old `app/index.html` wording.**
 - **Artful Intelligence brand launch** → on hold pending Eddie's decision on @Freddy_v association
 - **AI-powered CMS architecture** (Claude Code + Firecrawl + MongoDB) → parked; 5 scoping questions pending; no buyer yet
 
