@@ -232,6 +232,7 @@ export default function ControlPanel() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load status must be set after mount
     setActionsStatus("Loading next actions…");
 
     fetch(`/api/actions?mode=${sessionMode}`)

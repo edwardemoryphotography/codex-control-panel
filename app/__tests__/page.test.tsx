@@ -161,7 +161,10 @@ describe('Home page — control panel', () => {
     fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
     fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })
 
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    // ControlPanel fetches /api/actions on mount, so total calls is 2 (actions + route).
+    // The routing request should be deduped to a single /api/route call.
+    const routeCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/route'))
+    expect(routeCalls).toHaveLength(1)
     resolveFetch?.({ ok: false, status: 500, json: async () => ({}) })
     await waitFor(() => {
       expect(screen.getAllByText(/selected tool:/i).length).toBeGreaterThan(0)
@@ -189,9 +192,11 @@ describe('Home page — control panel', () => {
     fireEvent.click(screen.getByRole('button', { name: /route task/i }))
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const routeCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/route'))
+      expect(routeCalls).toHaveLength(1)
     })
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const routeCall = fetchMock.mock.calls.find(([url]) => String(url).includes('/api/route')) as [string, RequestInit]
+    const [, init] = routeCall
     expect(
       (init.headers as Record<string, string>)['x-codex-key'],
     ).toBe('secret-token')

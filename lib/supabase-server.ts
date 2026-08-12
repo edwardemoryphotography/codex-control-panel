@@ -31,6 +31,10 @@ export function getSupabaseServerClient(): SupabaseClient | null {
 
   if (!url || !anonKey) return null;
 
+  // Module-global cache is safe here because the anon client carries no
+  // per-user JWT — it is the same public key for every request. If a
+  // future endpoint needs a user-scoped client (e.g. auth.getUser()), do
+  // NOT reuse this singleton; create a per-request client instead.
   if (!cachedAnonClient) {
     cachedAnonClient = createClient(url, anonKey);
   }
