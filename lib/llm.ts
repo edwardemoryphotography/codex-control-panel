@@ -288,8 +288,14 @@ async function callAnthropic(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Anthropic ${response.status}: ${errorText.slice(0, 300)}`);
+    // Log upstream detail server-side; don't leak raw body/request_id to the browser
+    // (route aggregates these messages into the 502 it returns).
+    console.error(`Anthropic ${response.status}: ${await response.text()}`);
+    throw new Error(
+      response.status === 401
+        ? "The server's ANTHROPIC_API_KEY was rejected. Rotate the key and redeploy."
+        : `Anthropic request failed (${response.status})`,
+    );
   }
 
   const data = (await response.json()) as {
@@ -357,8 +363,12 @@ async function callOpenAi(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI ${response.status}: ${errorText.slice(0, 300)}`);
+    console.error(`OpenAI ${response.status}: ${await response.text()}`);
+    throw new Error(
+      response.status === 401
+        ? "The server's OPENAI_API_KEY was rejected. Rotate the key and redeploy."
+        : `OpenAI request failed (${response.status})`,
+    );
   }
 
   const data = (await response.json()) as {
