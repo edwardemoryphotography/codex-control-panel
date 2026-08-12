@@ -1,25 +1,15 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-08-10_
+_Last updated: 2026-08-11_
 
-**This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). `legacy-codex` previously kept an independently-drifting copy; it now keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
+**This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
 
-## ✅ SHIPPED
+## ✅ SHIPPED (recent — full history in docs/CHANGELOG.md)
 
-- **Codex Control Panel Lane B (local)** → Foundry persistence intake UI on the primary route flow (`RoutePersistPanel`), session-memory owner token, explicit confirmations, `/api/route/persist` submit + correction fields; tests green. Branch: `cursor/autonomous-project-hygiene-control-panel-ui-4e59` (push blocked — no GitHub credentials in this agent environment)
-- **Codex Control Panel v2** → liquid-glass UI (Apple Intelligence × Gemini), AI-powered routing via `/api/route` (Claude → GPT fallback, doctrine fallback offline), auto-scroll + feedback on route, lint/tests/build all green; `SUPERPROMPT.md` added for unifying all Legacy Codex repos
-- **Codex Control Panel v2 UI** → liquid-glass redesign (Apple Intelligence × Gemini) merged via PR #6 and auto-deployed
-- **AI routing v1** → merged via PR #7 and auto-deployed (needs Vercel env vars for live AI)
-- **In PR #8 (implemented, NOT yet shipped)** → provider policy + structured outputs, task lifecycle honesty (task IDs, draft-vs-execution honesty, persisted run records), owner-only auth (`APP_ACCESS_TOKEN`), full request validation + body limits, API safeguards + `/api/health` with key probes, and Standards Kit v2 (`standards/` — master charter + run cards + handoff contract); shipping blocked on merge + Vercel `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`/`APP_ACCESS_TOKEN` + live verification
-- **Photographer Agent Pack V1** → live on Gumroad (`edwardemory.gumroad.com/l/photographer-agent-pack-v1`)
-- **Artful Intelligence storefront** (`artful-intelligence-v1.html`) → deployed to Vercel, June 9 2026
-- **Starforge** → working prompt → Claude API → live HTML preview loop
-- **MacBook file system** → dead Downloads symlink replaced; automated file organizer scripts verified
-- **Legacy Codex** → live at `legacy-codex.vercel.app`
-- **Legacy Codex hygiene pass (2026-08-04)** → lint warnings 32 → 0, dead code removed, Supabase client and tab components fully typed; lint + 24 tests + production build all green (absorbed from `legacy-codex/STATE.md` main, 2026-08-10)
-- **Legacy Codex PR #47 (routing control plane) live-DB verification (2026-08-07)** → ran all 14 read-only checks from `supabase/verification/routing_control_plane_checks.sql` against `foundry-console` (`pkydkbuodikttfeawqsw`): RLS, anon-zero-privilege, delete guards, correction-chain integrity, idempotency-key uniqueness, and `persist_route_atomic` grants all verified as PR #47 intended. Found and fixed a real gap: the hardening migration's final revoke/drop/trigger step had never taken effect; applied a follow-up migration closing it, re-verified (absorbed from `legacy-codex/STATE.md` main, 2026-08-10)
+- **2026-08-11 fix: builds green + hardening** → hub turbopack.root, /api/actions owner-gated + audited, supabase cache doc, lint/test fixes, ci.yml; legacy @testing-library restore; arch vite split 594kB→220kB via manualChunks; all builds green (95+83 tests)
+- **2026-08-11 deploy: May 19 trio** → cognition-final.html, codex-operations.html, codex-territory-v36.html to codex-system-architecture/public/ (12d281d on main) — see `docs/DEPLOY_VERIFY.md`
 
 ---
 

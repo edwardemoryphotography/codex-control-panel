@@ -1,8 +1,10 @@
 /**
  * Minimal request safeguards for the API route handlers: owner-only
  * authentication, real request-body size limits, per-client rate limiting
- * (best-effort, in-memory — resets per serverless instance), request IDs,
- * and structured audit logging.
+ * (best-effort, in-memory — resets per serverless instance; for true
+ * distributed limiting use Upstash Redis or Vercel KV — see docs/DEPLOY_VERIFY.md),
+ * request IDs, and structured audit logging (visible in Vercel function logs;
+ * for dashboards use Vercel Analytics or Sentry).
  */
 
 import { createHash, timingSafeEqual } from "node:crypto";
