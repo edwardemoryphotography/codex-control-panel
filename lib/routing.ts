@@ -28,7 +28,24 @@ export type PromptPart = {
   prompt: string;
 };
 
+/**
+ * Persisted record of one AI draft generation for a routed step. Stored on
+ * the task record so history and exports preserve the lifecycle.
+ */
+export type StepRun = {
+  status: "generated" | "failed";
+  provider?: string;
+  /** Exact model that produced the draft. */
+  model?: string;
+  output?: string;
+  error?: string;
+  /** ISO timestamp of when the run finished. */
+  at: string;
+};
+
 export type RouteResult = {
+  /** Task ID, e.g. "T-ABC123XY" — carried through history and exports. */
+  id?: string;
   createdAt: string;
   task: string;
   mode: string;
@@ -39,6 +56,18 @@ export type RouteResult = {
   currentTool: string;
   override: { active: boolean; reason: string };
   prompts: PromptPart[];
+  /** What decided the route: "Claude", "GPT", or "doctrine" (local fallback). */
+  source?: string;
+  /** Exact model that produced the decision, when AI-routed. */
+  model?: string;
+  /** AI draft generations per prompt index, persisted with the task. */
+  runs?: Record<number, StepRun>;
+};
+
+export type AiRouteDecision = {
+  routes: Array<{ key: RouteKey; reason: string }>;
+  override: { active: boolean; reason: string };
+  strength: number;
 };
 
 export type Corrections = Record<string, Partial<Record<RouteKey, number>>>;
@@ -431,6 +460,72 @@ export type BuildResultInput = {
   corrections: Corrections;
 };
 
+export function newTaskId(): string {
+  const time = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `T-${time}-${rand}`;
+}
+
+function overrideRouteItem(
+  currentTool: string,
+  reason: string,
+  score = 0,
+): RouteSetItem {
+  return {
+    key: "override" as RouteKey,
+    label: "execution override",
+    tool: currentTool,
+    map: "",
+    reason,
+    role: "",
+    output: "",
+    keywords: [],
+    score,
+  };
+}
+
+function composeResult(
+  input: BuildResultInput,
+  routeSet: RouteSetItem[],
+  override: { active: boolean; reason: string },
+  strength: number,
+  source: string,
+  model?: string,
+): RouteResult {
+  const prompts = routeSet.map((route, index) => ({
+    part:
+      routeSet.length > 1 ? `Part ${String.fromCharCode(65 + index)}` : "Primary",
+    tool: route.tool,
+    category: route.label,
+    reason: route.reason ?? routeByTool[route.tool]?.reason ?? "",
+    prompt: buildPrompt(route.tool, input.task, route.label, {
+      currentTool: input.currentTool,
+      priority: input.priority,
+    }),
+  }));
+
+  return {
+    id: newTaskId(),
+    createdAt: new Date().toISOString(),
+    task: input.task,
+    mode:
+      routeSet.length > 1
+        ? "Hybrid"
+        : override.active
+          ? "Override"
+          : "Single route",
+    strength,
+    primaryRoute: routeSet[0].tool,
+    primaryKey: routeSet[0].key,
+    nextAction: deriveNextAction(routeSet, override),
+    currentTool: input.currentTool,
+    override,
+    prompts,
+    source,
+    model,
+  };
+}
+
 export function buildResult(input: BuildResultInput): RouteResult {
   const ranked = scoreRoute(input.task, input.priority, input.corrections);
   const top =
@@ -449,50 +544,145 @@ export function buildResult(input: BuildResultInput): RouteResult {
 
   if (override.active) {
     routeSet = [
-      {
-        key: "override" as RouteKey,
-        label: "execution override",
-        tool: input.currentTool,
-        map: "",
-        reason: override.reason,
-        role: "",
-        output: "",
-        keywords: [],
-        score: top.score + 1,
-      },
+      overrideRouteItem(input.currentTool, override.reason, top.score + 1),
       ...(hybrid ? hybrid.slice(0, 1) : []),
     ].slice(0, hybrid ? 2 : 1);
   }
 
-  const prompts = routeSet.map((route, index) => ({
-    part:
-      routeSet.length > 1 ? `Part ${String.fromCharCode(65 + index)}` : "Primary",
-    tool: route.tool,
-    category: route.label,
-    reason: route.reason ?? routeByTool[route.tool]?.reason ?? "",
-    prompt: buildPrompt(route.tool, input.task, route.label, {
-      currentTool: input.currentTool,
-      priority: input.priority,
-    }),
+  return composeResult(input, routeSet, override, matchStrength(ranked), "doctrine");
+}
+
+/**
+ * Validates the raw JSON an LLM returned for a routing decision.
+ * Returns null when the shape is unusable so callers can fall back
+ * to local doctrine routing.
+ */
+export function parseAiDecision(value: unknown): AiRouteDecision | null {
+  if (typeof value !== "object" || value === null) return null;
+  const raw = value as {
+    routes?: unknown;
+    override?: unknown;
+    strength?: unknown;
+  };
+
+  const validKeys = new Set(ROUTES.map((route) => route.key));
+  const routes: Array<{ key: RouteKey; reason: string }> = [];
+  if (Array.isArray(raw.routes)) {
+    for (const entry of raw.routes) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const candidate = entry as { key?: unknown; reason?: unknown };
+      if (
+        typeof candidate.key === "string" &&
+        validKeys.has(candidate.key as RouteKey) &&
+        !routes.some((route) => route.key === candidate.key)
+      ) {
+        routes.push({
+          key: candidate.key as RouteKey,
+          reason: typeof candidate.reason === "string" ? candidate.reason : "",
+        });
+      }
+    }
+  }
+  if (routes.length === 0) return null;
+
+  const overrideRaw =
+    typeof raw.override === "object" && raw.override !== null
+      ? (raw.override as { active?: unknown; reason?: unknown })
+      : {};
+  const override = {
+    active: overrideRaw.active === true,
+    reason: typeof overrideRaw.reason === "string" ? overrideRaw.reason : "",
+  };
+
+  const strengthNum = Number(raw.strength);
+  const strength = Number.isFinite(strengthNum)
+    ? Math.min(100, Math.max(0, Math.round(strengthNum)))
+    : 60;
+
+  return { routes: routes.slice(0, 2), override, strength };
+}
+
+/**
+ * Builds a full RouteResult from an AI routing decision, respecting the
+ * user's override / hybrid toggles.
+ */
+export function buildResultFromDecision(
+  input: BuildResultInput,
+  decision: AiRouteDecision,
+  source: string,
+  model?: string,
+): RouteResult {
+  const override =
+    input.overrideEnabled && decision.override.active
+      ? {
+          active: true,
+          reason:
+            decision.override.reason ||
+            "Override: stay in the current tool and finish.",
+        }
+      : {
+          active: false,
+          reason:
+            decision.override.reason ||
+            "Doctrine stands; handoff cost is justified.",
+        };
+
+  let routeSet: RouteSetItem[] = decision.routes.map((route) => ({
+    ...routeByKey[route.key],
+    score: 0,
+    reason: route.reason || routeByKey[route.key].reason,
   }));
 
-  return {
-    createdAt: new Date().toISOString(),
-    task: input.task,
-    mode:
-      routeSet.length > 1
-        ? "Hybrid"
-        : override.active
-          ? "Override"
-          : "Single route",
-    strength: matchStrength(ranked),
-    primaryRoute: routeSet[0].tool,
-    primaryKey: routeSet[0].key,
-    nextAction: deriveNextAction(routeSet, override),
-    currentTool: input.currentTool,
+  if (!input.hybridEnabled) {
+    routeSet = routeSet.slice(0, 1);
+  }
+
+  if (override.active) {
+    routeSet = [
+      overrideRouteItem(input.currentTool, override.reason),
+      ...routeSet.slice(0, 1),
+    ].slice(0, input.hybridEnabled ? 2 : 1);
+  }
+
+  return composeResult(
+    input,
+    routeSet,
     override,
-    prompts,
-  };
+    decision.strength,
+    source,
+    model,
+  );
+}
+
+export type CorrectionHint = { key: RouteKey; weight: number };
+
+/**
+ * Compact summary of the user's learned corrections that apply to this
+ * task's wording, suitable for sending to the AI classifier so "Teach
+ * router" affects AI routing, not just the doctrine fallback.
+ */
+export function correctionHints(
+  task: string,
+  corrections: Corrections,
+): CorrectionHint[] {
+  const totals = new Map<RouteKey, number>();
+  for (const tok of salientTokens(task)) {
+    const bias = corrections[tok];
+    if (!bias) continue;
+    for (const [key, weight] of Object.entries(bias)) {
+      if (typeof weight === "number" && weight > 0) {
+        totals.set(
+          key as RouteKey,
+          (totals.get(key as RouteKey) ?? 0) + weight,
+        );
+      }
+    }
+  }
+  return [...totals.entries()]
+    .map(([key, weight]) => ({ key, weight: Math.round(weight) }))
+    .filter((hint) => hint.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 4);
 }
 
 export function applyCorrection(
