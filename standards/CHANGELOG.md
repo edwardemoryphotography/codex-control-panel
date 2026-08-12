@@ -1,5 +1,9 @@
 # Legacy Codex Standards Kit — Changelog
 
+## 2.1.1 — 2026-08-11
+
+- **FREEZE SPEC phantom-path cleanup (correction to 2.1.0)** — the 2.1.0 entry below claimed the `app/index.html` phantom path was replaced "everywhere it was flagged in this release." That was inaccurate: two live references survived the pass — `standards/INVENTORY-TEMPLATE.md` (a descriptive note) and `standards/run-cards/CURSOR.md` (an active "must not" instruction Cursor reads). Both now carry the approved wording from `STATE.md` §FROZEN instead of the phantom path. A repo-wide grep found no other surviving occurrences outside historical changelog/STATE.md entries that intentionally quote the old wrong path as context for the correction — those are left as-is.
+
 ## 2.1.0 — 2026-08-10
 
 Consolidation pass across the four Codex-family repos (`codex-control-panel`, `legacy-codex`, `codex-system-architecture`, `Artful-Intelligence`) to stop drifting copies of agent/standards docs. Additive only — no removed rules, hence a minor bump.
