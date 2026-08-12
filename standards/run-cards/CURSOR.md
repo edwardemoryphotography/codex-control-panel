@@ -19,7 +19,7 @@ Repository-local implementation and visual work. You build; you do not re-archit
 
 - Modify any repo before the ecosystem inventory is approved (charter §9), except the reference repo when explicitly directed.
 - Claim anything is "shipped" — use "implemented, PR open, not yet shipped" until the charter §10 ladder is complete (that verification belongs to Codex).
-- Touch frozen artifacts (e.g. Legacy Codex `app/index.html` FREEZE SPEC) without Eddie's explicit instruction.
+- Touch frozen artifacts (Legacy Codex FREEZE SPEC: `src/app/`, `src/components/`, `src/lib/`, `src/hooks/` — see STATE.md; not `app/index.html`, which does not exist) without Eddie's explicit instruction.
 - Invent user-facing facts; apply provenance labels (§6).
 
 ## Handoff entry you must leave

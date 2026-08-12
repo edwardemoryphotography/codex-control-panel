@@ -18,7 +18,7 @@ Read-only discovery across every Legacy Codex-related repository. Every field ne
 
 ## Known candidates (verify, then extend)
 
-`codex-control-panel` (reference implementation) · `legacy-codex` (note: FREEZE SPEC on `app/index.html`) · `codex-system-architecture` · Foundry Console (repo not yet located — confirm whether it exists) · Codex Operations / Codex Territory (May 19 artifacts — confirm where they live)
+`codex-control-panel` (reference implementation) · `legacy-codex` (note: FREEZE SPEC on `src/app/`, `src/components/`, `src/lib/`, `src/hooks/` — not `app/index.html`, see STATE.md) · `codex-system-architecture` · Foundry Console (repo not yet located — confirm whether it exists) · Codex Operations / Codex Territory (May 19 artifacts — confirm where they live)
 
 ## Output
 
