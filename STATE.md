@@ -1,8 +1,25 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-09-05 (Legacy Codex repair; other entries retain their original dates)_
+_Last updated: 2026-09-06 (Legacy Codex production caught up through PR73; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
+
+---
+
+## Legacy Codex Sep 2–6 shipped rollup
+
+Merged on `edwardemoryphotography/legacy-codex` and live on production (`frontend` / https://legacy-codex.vercel.app) at tip `be17ccb` (`chore: update evidence snapshot`), which includes PR73 merge `ba00323`. GitHub commit status is success. The same tip is also deployed on `legacy-codex`, `codex-starforge-dashboard`, and `legacy-codex-vercel-diagnostic`.
+
+- Home-screen next action is larger and easier to act on (#66, 2026-09-02)
+- ThinkingOrb + BorderBeam visual language (#68, 2026-09-04)
+- Mission is one focus surface with Orb and Beam (#70, 2026-09-04)
+- Mission-context next-move plus in-place connection recovery (#71, 2026-09-05)
+- `transitions-dev` / `transitions-polish` skills (#69, 2026-09-05)
+- Save/resume the same next action across Mission and Resumption Log (#72, 2026-09-05)
+- Evidence snapshot CI no longer false-greens (#67, 2026-09-05)
+- PR72 uniqueness / concurrent-save repair (#73, 2026-09-06)
+
+Owner-session save → start → note → pause → reload → resume of the same action ID is still unverified. Fresh anonymous sessions are not that finish line.
 
 ---
 
@@ -14,15 +31,15 @@ _Last updated: 2026-09-05 (Legacy Codex repair; other entries retain their origi
 - **Continuity:** Canonical Vercel project is `frontend` (`prj_irrXhfz1elCLhO1Pdgd0ffM4wfz2`), Supabase is `foundry-console` (`pkydkbuodikttfeawqsw`). Failed session reads must not silently create replacement anonymous users. Preview and production identities are separate; do not clear browser data or reassign mission ownership as a repair shortcut.
 
 
-## Saved action / resume repair — 2026-09-06 UTC
+## Saved action / resume repair — 2026-09-06
 
-- **Merged baseline:** legacy-codex PR72 (`b5d379b`) adds mission-linked canonical `actions`, shared by Mission and Resumption Log. Deployment checks succeeded; an owner-session save/pause/reload/resume was not verified. User-reported DONE is not evidence truth.
-- **Repair in progress:** [legacy-codex PR73](https://github.com/edwardemoryphotography/legacy-codex/pull/73), head `7e77f838e6144f23f8e71884d2edd05cd3213253`, uses functional React state replacement and derives chooser visibility from committed state. Production Supabase `pkydkbuodikttfeawqsw` now has `actions_one_unfinished_per_mission`, covering all mission-linked non-DONE rows regardless of `is_next_action`. Index metadata verified. Preflight found zero mission-linked actions and zero duplicate groups; no user rows were changed or fabricated. 93 existing tests, TypeScript and production build pass; lint 0 errors/5 pre-existing warnings. PR73 merged as `ba003233f3640871cb65bea78a0599d49fb32f0f`; GitHub CI run 34001417217 passed. Production deployment pending; owner-session behavior remains unverified.
-- **Blocked / unverified:** Eddie's original iPhone authentication context is not accessible in this workspace. No claim of successful owner-session writes, reload, or resume. The PR71 evidence-gate defects are outside this repair and remain unresolved.
-- **Next / finish line:** Confirm deployment of the merged repair; in the original iPhone browser (without clearing data), save one real mission-linked action, start it, save a starting-point note and pause, reload, then resume the same action. Record the same action ID, note, status and absence of duplicates/errors. A fresh anonymous session or code tests cannot satisfy this finish line.
+- **Shipped:** [legacy-codex PR73](https://github.com/edwardemoryphotography/legacy-codex/pull/73) merged as `ba00323` and is production-deployed on canonical Vercel project `frontend` / https://legacy-codex.vercel.app at descendant `be17ccb` (includes `ba00323`). GitHub commit status is success. Same tip is live on `legacy-codex`, `codex-starforge-dashboard`, and `legacy-codex-vercel-diagnostic`. PR72 (`b5d379b`) remains the mission-linked canonical `actions` baseline shared by Mission and Resumption Log. PR73 uses functional React state replacement and derives chooser visibility from committed state. Production Supabase `pkydkbuodikttfeawqsw` has `actions_one_unfinished_per_mission`, covering all mission-linked non-DONE rows regardless of `is_next_action`. Index metadata verified. Preflight found zero mission-linked actions and zero duplicate groups; no user rows were changed or fabricated. 93 existing tests, TypeScript and production build pass; lint 0 errors / 5 pre-existing warnings. GitHub CI run 34001417217 passed. User-reported DONE is not evidence truth.
+- **Blocked / unverified:** Eddie's original iPhone owner-session save → start → note → pause → reload → resume of the same action ID is still unverified. Fresh anonymous sessions are not that finish line. Eddie's original iPhone authentication context is not accessible in this workspace. No claim of successful owner-session writes, reload, or resume. PR71 evidence-gate defects outside this saved-action repair remain unresolved.
+- **Next / finish line:** In the original iPhone browser (without clearing data), save one real mission-linked action, start it, save a starting-point note and pause, reload, then resume the same action. Record the same action ID, note, status and absence of duplicates/errors. A fresh anonymous session or code tests cannot satisfy this finish line.
 
 ## ✅ SHIPPED (recent — full history in docs/CHANGELOG.md)
 
+- **2026-09-06 Legacy Codex #66–#73** → merged and production-deployed at `be17ccb` on `frontend` / https://legacy-codex.vercel.app — see Sep 2–6 rollup above. Owner-session save/resume still unverified.
 - **2026-08-11 fix: builds green + hardening** → hub turbopack.root, /api/actions owner-gated + audited, supabase cache doc, lint/test fixes, ci.yml; legacy @testing-library restore; arch vite split 594kB→220kB via manualChunks; all builds green (95+83 tests)
 - **2026-08-11 deploy: May 19 trio** → cognition-final.html, codex-operations.html, codex-territory-v36.html to codex-system-architecture/public/ (12d281d on main) — see `docs/DEPLOY_VERIFY.md`
 
