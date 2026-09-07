@@ -1,6 +1,6 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-09-06 (Legacy Codex production caught up through PR73; other entries retain their original dates)_
+_Last updated: 2026-09-07 (Legacy Codex production workflow and analyzer verified; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
@@ -19,7 +19,7 @@ Merged on `edwardemoryphotography/legacy-codex` and live on production (`fronten
 - Evidence snapshot CI no longer false-greens (#67, 2026-09-05)
 - PR72 uniqueness / concurrent-save repair (#73, 2026-09-06)
 
-Owner-session save → start → note → pause → reload → resume of the same action ID is still unverified. Fresh anonymous sessions are not that finish line.
+A persistent real production session has now verified save → start → note → pause → reload → resume of the same action ID with no duplicate. Recovery of Eddie’s historical anonymous identity specifically from his original physical iPhone remains a distinct device/session-continuity check.
 
 ---
 
@@ -31,11 +31,12 @@ Owner-session save → start → note → pause → reload → resume of the sam
 - **Continuity:** Canonical Vercel project is `frontend` (`prj_irrXhfz1elCLhO1Pdgd0ffM4wfz2`), Supabase is `foundry-console` (`pkydkbuodikttfeawqsw`). Failed session reads must not silently create replacement anonymous users. Preview and production identities are separate; do not clear browser data or reassign mission ownership as a repair shortcut.
 
 
-## Saved action / resume repair — 2026-09-06
+## Saved action / resume verification — 2026-09-07
 
-- **Shipped:** [legacy-codex PR73](https://github.com/edwardemoryphotography/legacy-codex/pull/73) merged as `ba00323` and is production-deployed on canonical Vercel project `frontend` / https://legacy-codex.vercel.app at descendant `be17ccb` (includes `ba00323`). GitHub commit status is success. Same tip is live on `legacy-codex`, `codex-starforge-dashboard`, and `legacy-codex-vercel-diagnostic`. PR72 (`b5d379b`) remains the mission-linked canonical `actions` baseline shared by Mission and Resumption Log. PR73 uses functional React state replacement and derives chooser visibility from committed state. Production Supabase `pkydkbuodikttfeawqsw` has `actions_one_unfinished_per_mission`, covering all mission-linked non-DONE rows regardless of `is_next_action`. Index metadata verified. Preflight found zero mission-linked actions and zero duplicate groups; no user rows were changed or fabricated. 93 existing tests, TypeScript and production build pass; lint 0 errors / 5 pre-existing warnings. GitHub CI run 34001417217 passed. User-reported DONE is not evidence truth.
-- **Blocked / unverified:** Eddie's original iPhone owner-session save → start → note → pause → reload → resume of the same action ID is still unverified. Fresh anonymous sessions are not that finish line. Eddie's original iPhone authentication context is not accessible in this workspace. No claim of successful owner-session writes, reload, or resume. PR71 evidence-gate defects outside this saved-action repair remain unresolved.
-- **Next / finish line:** In the original iPhone browser (without clearing data), save one real mission-linked action, start it, save a starting-point note and pause, reload, then resume the same action. Record the same action ID, note, status and absence of duplicates/errors. A fresh anonymous session or code tests cannot satisfy this finish line.
+- **Shipped:** Legacy Codex PR72 introduced mission-linked canonical actions; PR73 repaired state replacement and the one-unfinished-action invariant. A persistent real production session at `https://legacy-codex.vercel.app` then completed the full proof loop against Supabase `pkydkbuodikttfeawqsw`: mission `8d561af2-1c61-4302-8f4e-6d97f5423448` saved and promoted; exactly one linked action `df2f3ffe-137b-4a73-862a-bcfdd417969c` saved; action started, paused with a note, page reloaded showing Ready to resume with the same ID/note, then resumed without an error or duplicate. The action and verification mission were subsequently completed with production evidence.
+- **Analyzer repair:** PR76 merged as `2bcf8e401490f9659cc17d9780a0de7b28535491`; canonical production deployment `dpl_yvzgfdQFiLL1WP79rzYUGf9YKR8P` is READY. `POST /api/analyze` now returns the correct unauthenticated 401 boundary instead of the reproduced `MISSING_SUPABASE_URL` 500. Vercel reported no runtime errors in the verification window.
+- **Verification gates:** 93 tests passed; TypeScript and production build passed; lint returned 0 errors / 5 pre-existing warnings. No aliases or projects changed, no synthetic rows were created, and no secret values were copied.
+- **Still distinct:** Recovery of Eddie's historical anonymous identity specifically from his original physical iPhone was not tested from this cloud session. That remains a device/session-continuity check, not an unresolved defect in the now-verified general save/pause/reload/resume workflow.
 
 ## ✅ SHIPPED (recent — full history in docs/CHANGELOG.md)
 
