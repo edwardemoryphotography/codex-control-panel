@@ -44,3 +44,17 @@ Status: implemented — PR open, not yet shipped
 Evidence: full audit reported to Eddie in-session before any edits; CHANGELOG.md 2.1.0 entry; diff of standards/, STATE.md, SUPERPROMPT.md, STANDARDS-VERSION
 Gaps: satellite-repo PRs (legacy-codex, codex-system-architecture, Artful-Intelligence) are separate, independently reviewable/vetoable PRs — see each repo's own HANDOFF/PR for status
 Next: Eddie reviews and merges per repo; no code/product behavior changed, docs only
+
+---
+### [2026-09-08 UTC] AGENT: Codex — CLAIM / continuation
+Branch: codex/current-intent-authority
+Scope: Reconcile shared autonomy standards and historical state gates for the same instruction-cleanup task.
+Status: implementing — documentation only
+Evidence: current user request “Legacy Codex Astra Instruction Cleanup”; inspected branch and current main before edits. No application or production-data changes.
+
+### [2026-09-08 UTC] AGENT: Codex — RELEASE
+Scope: instruction hierarchy cleanup; application source unchanged.
+Status: implemented and locally verified; publication/merge evidence lives in the linked PR records.
+Evidence: 95 tests; lint, TypeScript and build passed; document consistency and preservation review passed. Legacy Codex PR: https://github.com/edwardemoryphotography/legacy-codex/pull/82 . Shared-standard branch: https://github.com/edwardemoryphotography/codex-control-panel/tree/codex/current-intent-authority .
+Gaps: no new product decision needed. Deployment/runtime stages are not applicable to these documentation changes.
+Next: integrate both reviewed changes through repository gates; future agents follow current explicit intent.

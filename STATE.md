@@ -4,7 +4,15 @@ _Last updated: 2026-09-08 (Legacy Codex save/resume and live analyzer output ver
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
+This file describes dated project truth, priorities, and lessons. It does not authorize new actions or impose hidden approval gates. Current explicit user intent and the applicable agent authority model govern execution; historical priority/hold notes below do not override a newer request.
+
 ---
+
+## Instruction hierarchy cleanup — 2026-09-08
+
+- **Implemented and verified:** Current explicit user intent governs reversible coding work. Retired local/hub freeze gates and redundant inventory, tool-role, and skill confirmations; preserved specific sensitive-action authorization and platform protections. Local authority is in `legacy-codex/AGENTS.md`; shared conduct is in Standards Kit 2.2.0. Legacy Codex lint/types/173 tests/build and Control Panel lint/types/95 tests/build passed; knowledge-preservation and contradiction review passed.
+- **Blocked:** No missing human product decision for this instruction task. Two existing skill description-length validator findings remain unchanged; application runtime/device evidence above and below retains its own dated scope.
+- **Next / adoption evidence:** Integrate [Legacy Codex PR #82](https://github.com/edwardemoryphotography/legacy-codex/pull/82) and the [paired standards change](https://github.com/edwardemoryphotography/codex-control-panel/tree/codex/current-intent-authority) through repository gates. Consult their GitHub merge state for adoption; this implementation checkpoint does not claim application deployment or runtime verification.
 
 ## Legacy Codex Sep 2–6 shipped rollup
 
@@ -27,7 +35,7 @@ A persistent real production session has now verified save → start → note �
 
 - **Shipped:** PR71 merged as `161f38d1ad887da5b1530674ca07cc5ea717daea`; the canonical https://legacy-codex.vercel.app/ served that repair at descendant `12b6326`. The Mission Orb/Beam design, context-aware local next-move rules, and in-place connection recovery are deployed. Live browser reached Connected and the button returned the correct no-Primary clarification for its actual empty session. Retained suite: 93 passing tests; lint 0 errors / 5 existing warnings; TypeScript and production build passed. Follow-up `6038fc1` removes auth-stub tests and records verification; application source is unchanged.
 - **Unverified:** Eddie's existing phone session and saved-mission recovery. His exact connection failure did not reproduce. A fresh anonymous connection is not owner-session verification. Predictive Strategic Delta remains incomplete. Saved-action implementation and its verification boundary are tracked below.
-- **Next:** Verify the existing mission from Eddie's original browser session, preserving its stored authentication. Continue from this release; do not recreate repositories or reopen completed release mechanics. Eddie explicitly authorized this bounded app repair and taking it through release without routine Git approvals; the general app freeze still applies to unrelated work.
+- **Next:** Verify the existing mission from Eddie's original browser session, preserving its stored authentication. Continue from this release; do not recreate repositories or reopen completed release mechanics. Eddie explicitly authorized this bounded app repair and taking it through release without routine Git approvals; unrelated work remains outside that task's scope. The historical blanket freeze was retired on 2026-09-08; current authority is in `legacy-codex/AGENTS.md`.
 - **Continuity:** Canonical Vercel project is `frontend` (`prj_irrXhfz1elCLhO1Pdgd0ffM4wfz2`), Supabase is `foundry-console` (`pkydkbuodikttfeawqsw`). Failed session reads must not silently create replacement anonymous users. Preview and production identities are separate; do not clear browser data or reassign mission ownership as a repair shortcut.
 
 
@@ -68,9 +76,9 @@ A persistent real production session has now verified save → start → note �
 
 ---
 
-## 🔒 FROZEN — DO NOT TOUCH
+## Historical safeguards and deferred work
 
-- **Legacy Codex FREEZE SPEC** → in `legacy-codex`, don't rewrite `src/app/` (`page.tsx`, `layout.tsx`, `globals.css`, `api/`), `src/components/`, `src/lib/`, or `src/hooks/` unless Eddie explicitly says "REWRITE THE APP CODE". Docs, config, and coordination files are not frozen. **Corrected 2026-08-10:** this rule previously named `app/index.html`, which does not exist in the repo (it's Next.js App Router; the real entry is `src/app/page.tsx`) — the freeze was guarding a phantom path while the actual app code sat unprotected. Eddie has approved this corrected wording. **Do not restore the old `app/index.html` wording.**
+- **Legacy Codex FREEZE SPEC — retired 2026-09-08 by Eddie's explicit instruction.** The historical requirement to say "REWRITE THE APP CODE" before changing `src/app/`, `src/components/`, `src/lib/`, or `src/hooks/` no longer applies. The phantom `app/index.html` path was corrected on 2026-08-10; preserve that lesson, not the permission gate. `legacy-codex/AGENTS.md` owns current authority and `standards/AGENT-BEHAVIOR.md` owns shared conduct.
 - **Artful Intelligence brand launch** → on hold pending Eddie's decision on @Freddy_v association
 - **AI-powered CMS architecture** (Claude Code + Firecrawl + MongoDB) → parked; 5 scoping questions pending; no buyer yet
 
@@ -89,7 +97,7 @@ Where each project actually lives, so no agent edits a stale duplicate. Absorbed
 
 ---
 
-## ⚙️ ACTIVE GOVERNANCE RULES
+## ⚙️ Durable operating lessons
 
 - No new frameworks until a current artifact is user-tested by a real buyer
 - Shipped proof beats doctrine

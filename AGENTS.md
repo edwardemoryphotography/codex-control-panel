@@ -4,6 +4,10 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Authority and task execution
+
+**CURRENT USER INTENT HAS AUTHORITY.** Follow `standards/AGENT-BEHAVIOR.md` for autonomy and specific human authorization boundaries, and applicable `standards/MASTER-CHARTER.md` sections for engineering/product rules. `CLAUDE.md` imports this file. State, historical freezes, inventories, and run cards do not add approval gates to an explicitly authorized task. Platform requirements and access controls remain binding.
+
 # Legacy Codex agent doctrine
 
 This repository is part of the Legacy Codex execution infrastructure. All AI builders — Claude Code, Cursor, Codex, Grok Build, Hermes-adjacent agents, and future models — must use the same cognitive-transmission doctrine.

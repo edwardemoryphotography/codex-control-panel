@@ -5,10 +5,10 @@ Prevents Cursor, Claude Code, and ChatGPT Codex from repeating audits, duplicati
 ## The rules
 
 1. Every Legacy Codex repository has a `HANDOFF.md` at its root.
-2. **Read before acting.** Every agent reads the target repo's `HANDOFF.md` (and this contract) before its first action there.
-3. **One agent modifies a repository at a time.** Claim the repo by appending a `CLAIM` entry; release it with a `RELEASE` entry when your run ends. If a claim is held, do read-only work or stop and report.
-4. **Branch and PR ownership:** the claiming agent owns its branch and PR. Other agents comment/review; they do not force-push, rebase, or open competing PRs for the same scope.
-5. **Stale locks:** a claim older than 24h with no entries may be cleared by Codex with an explicit `RELEASE (stale)` entry — never silently.
+2. **Read before editing.** Read this contract and the target repo's existing handoff before modifying its scope. If absent, bootstrap the handoff during the authorized task; missing documentation is not a new permission gate.
+3. **Prevent conflicting writes.** Record scope, branch, and PR in a `CLAIM` entry; release with `RELEASE` when the run ends. Inspect active claims and branch activity. Continue safe non-overlapping work in an isolated checkout; reconcile an actual overlapping edit before writing it. A historical claim is not a repository-wide permission gate.
+4. **Branch and PR ownership:** preserve others' work. When continuing an existing task, inspect and reuse its PR, record the continuation, and append commits without rewriting shared history. Do not create competing PRs for the same scope or overwrite concurrent changes. Shared-history rewrites require specific authorization under `AGENT-BEHAVIOR.md`.
+5. **Stale claims:** a claim older than 24h with no entries or newer branch activity may be cleared by the assigned agent with an explicit `RELEASE (stale)` entry — never silently. A current user instruction to continue work may transfer ownership sooner; record the evidence and preserve concurrent edits.
 6. **Evidence-based completion:** no entry may say "done" without links or artifacts (PR, test output, screenshots, live URL check). Use the honest status vocabulary below.
 7. Entries are append-only, newest last. Never rewrite history.
 

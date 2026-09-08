@@ -1,6 +1,6 @@
 # ECOSYSTEM INVENTORY — TEMPLATE
 
-Read-only discovery across every Legacy Codex-related repository. Every field needs evidence (file path, commit, URL) — no guesses. **No repository is modified until Eddie approves this inventory** (Master Charter §9).
+Read-only discovery across every Legacy Codex-related repository. Every field needs evidence (file path, commit, URL) — no guesses. Use this template for requested ecosystem discovery (Master Charter §9). It is not an approval prerequisite for explicitly authorized implementation.
 
 ## Per-repository record
 
@@ -18,8 +18,8 @@ Read-only discovery across every Legacy Codex-related repository. Every field ne
 
 ## Known candidates (verify, then extend)
 
-`codex-control-panel` (reference implementation) · `legacy-codex` (note: FREEZE SPEC on `src/app/`, `src/components/`, `src/lib/`, `src/hooks/` — not `app/index.html`, see STATE.md) · `codex-system-architecture` · Foundry Console (repo not yet located — confirm whether it exists) · Codex Operations / Codex Territory (May 19 artifacts — confirm where they live)
+`codex-control-panel` (reference implementation) · `legacy-codex` (human-facing product; `AGENTS.md` owns its authority model) · `codex-system-architecture` · Foundry Console (repo not yet located — confirm whether it exists) · Codex Operations / Codex Territory (May 19 artifacts — confirm where they live)
 
 ## Output
 
-One markdown table (or one record block per repo) + a proposed migration order, delivered to Eddie for approval before Phase 2.
+One markdown table (or one record block per repo) + a proposed migration order, with evidence and any genuinely missing product decision. If implementation is already requested, continue within that authorized scope.
