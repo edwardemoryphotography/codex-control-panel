@@ -1,5 +1,12 @@
 # Legacy Codex Standards Kit — Changelog
 
+## 2.2.0 — 2026-09-08
+
+- Eddie explicitly requested retirement of redundant permission gates. Current user intent now governs reversible coding work; specific authorization still bounds destructive, irreversible, financial, and credential actions. Platform protections remain binding.
+- Reconciled AGENT-BEHAVIOR, MASTER-CHARTER, inventory, handoff, run cards, and SUPERPROMPT. Removed mandatory inventory reapproval, blanket app freezes, and tool-name implementation/release restrictions.
+- State remains project truth and durable lessons. Preserved the retired freeze's phantom-path history and all prior release/runtime evidence. Legacy Codex PR #82 consolidates local guidance in AGENTS.md and keeps CLAUDE.md a thin import.
+- Verification is proportional and evidence-based; deployment/runtime stages apply to relevant releases, not instruction-only changes. No application source, product doctrine, design tokens, or data-ownership contracts changed.
+
 ## 2.1.1 — 2026-08-11
 
 - **FREEZE SPEC phantom-path cleanup (correction to 2.1.0)** — the 2.1.0 entry below claimed the `app/index.html` phantom path was replaced "everywhere it was flagged in this release." That was inaccurate: two live references survived the pass — `standards/INVENTORY-TEMPLATE.md` (a descriptive note) and `standards/run-cards/CURSOR.md` (an active "must not" instruction Cursor reads). Both now carry the approved wording from `STATE.md` §FROZEN instead of the phantom path. A repo-wide grep found no other surviving occurrences outside historical changelog/STATE.md entries that intentionally quote the old wrong path as context for the correction — those are left as-is.
