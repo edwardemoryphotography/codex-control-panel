@@ -1,6 +1,6 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-09-07 (Legacy Codex production workflow and analyzer verified; other entries retain their original dates)_
+_Last updated: 2026-09-08 (Legacy Codex save/resume verified; analyzer output verification remains open; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
@@ -36,6 +36,7 @@ A persistent real production session has now verified save → start → note �
 - **Shipped:** Legacy Codex PR72 introduced mission-linked canonical actions; PR73 repaired state replacement and the one-unfinished-action invariant. A persistent real production session at `https://legacy-codex.vercel.app` then completed the full proof loop against Supabase `pkydkbuodikttfeawqsw`: mission `8d561af2-1c61-4302-8f4e-6d97f5423448` saved and promoted; exactly one linked action `df2f3ffe-137b-4a73-862a-bcfdd417969c` saved; action started, paused with a note, page reloaded showing Ready to resume with the same ID/note, then resumed without an error or duplicate. The action and verification mission were subsequently completed with production evidence.
 - **Analyzer repair:** PR76 merged as `2bcf8e401490f9659cc17d9780a0de7b28535491`; canonical production deployment `dpl_yvzgfdQFiLL1WP79rzYUGf9YKR8P` is READY. `POST /api/analyze` now returns the correct unauthenticated 401 boundary instead of the reproduced `MISSING_SUPABASE_URL` 500. Vercel reported no runtime errors in the verification window.
 - **Verification gates:** 93 tests passed; TypeScript and production build passed; lint returned 0 errors / 5 pre-existing warnings. No aliases or projects changed, no synthetic rows were created, and no secret values were copied.
+- **Independent check / remaining analyzer gate (2026-09-08):** The available cloud session independently resumed the existing action, reloaded it, and confirmed the same action ID and note in Mission and Resumption Log; SQL counted exactly one linked action at that check. This does not prove original-iPhone recovery. Analyzer configuration and unauthenticated 401 checks passed, but successful authenticated model output remains unverified. Automatic approval review rejected uploading the public production configuration artifact for lack of specific outbound-upload approval. Next: obtain that approval before the live analysis test. Canonical production is READY at `505128c4f00c7fa326db59013a8be178293d309f` (`dpl_H3DaFiB1WVnvpy4RTmpjGUJSyHgz`) on September 8.
 - **Still distinct:** Recovery of Eddie's historical anonymous identity specifically from his original physical iPhone was not tested from this cloud session. That remains a device/session-continuity check, not an unresolved defect in the now-verified general save/pause/reload/resume workflow.
 
 ## ✅ SHIPPED (recent — full history in docs/CHANGELOG.md)
