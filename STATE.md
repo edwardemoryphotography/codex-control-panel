@@ -1,10 +1,18 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-09-08 (Legacy Codex save/resume and live analyzer output verified; other entries retain their original dates)_
+_Last updated: 2026-09-17 (PR #79 supersession and canonical UI verification; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
+
+## Legacy Codex Vaughn UI/UX readiness — 2026-09-17
+
+- **Shipped / resolved:** PR #79 closed as superseded, without merging or deleting its branch. Its two real merge conflicts are in MissionTab.tsx and ConstraintValidatorTab.tsx. Analyzer orb behavior was already shipped in #68/#70; #78 replaced the old Right Now card; #81's cognition-field redesign merged September 9 and is included in current production. Do not revive the duplicate hero to resolve this obsolete PR.
+- **Deployed / runtime checked:** https://legacy-codex.vercel.app/ resolves to Vercel project frontend (prj_irrXhfz1elCLhO1Pdgd0ffM4wfz2), READY deployment dpl_3j4ngpxmqYmQTjC5pUFCcA8LFjoi at 689c621e6e3aa304fb5c52fe0eac04fce7f25de7. Live desktop browser connected, rendered Mission and its Why explanation, exposed New mission controls, read the existing completed action in Resumption Log, and reported live Claude analysis enabled. No relevant application console errors; Vercel found no runtime errors in the checked one-hour window.
+- **Source verification:** Exact production source passed 191/191 tests, production build, TypeScript, and lint (0 errors, 8 existing warnings). No application source, aliases, credentials, schema, or deployment configuration changed.
+- **Blocked:** Automatic approval review rejected creating a new production mission for the Vaughn walkthrough because explicit authorization for that persistent record was required. No new live save/pause/reload/resume proof is claimed. Prior successful write-path verification above remains historical evidence; the physical iPhone identity remains separate.
+- **Next:** Obtain specific authorization to create “Show Vaughn the first working Legacy Codex UI/UX” with one real action on the canonical site, then run save → start → note → pause → reload → resume. Use the current release; no additional orb merge or project migration is needed.
 
 ## Legacy Codex Sep 2–6 shipped rollup
 
