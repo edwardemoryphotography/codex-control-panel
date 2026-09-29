@@ -1,10 +1,17 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-09-17 (PR #79 supersession and canonical UI verification; other entries retain their original dates)_
+_Last updated: 2026-09-29 (North Star runtime-inheritance preview; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
+
+## Legacy Codex North Star runtime inheritance — 2026-09-29
+
+- **Implemented / preview deployed, not merged or production-live:** [legacy-codex PR #90](https://github.com/edwardemoryphotography/legacy-codex/pull/90), commit `29aad9c3b60a961d75f212a95de94cef59284290`, carries the existing Goose Cookbook method into both application model calls and adds Codex → Root → North Star with the Goose incident, MasterChef method, and canonical/pinned source links. It also repairs double-flattened Codex search results. The canonical doctrine remains `codex-system-architecture/notion-wiki/docs/GOOSE-COOKBOOK.md`; this is a runtime projection, not a new owner or a changed product vision. Local verification: 257/257 tests, TypeScript, lint 0 errors / 8 existing warnings, and webpack production build pass. GitHub's standard `verify` check also passes. Vercel project `frontend` preview `dpl_cW1kF7L2i9iUNsRjGgz4QN1qMwd4` is READY at the exact commit.
+- **Unverified / bounded limitation:** Live reasoning quality has not been evaluated for these prompts. The analyzer only receives the supplied artifacts/directive; it does not automatically retrieve all history or persist extracted lessons. The bounded operation path retains its owner allowlist and one-candidate contract. Local visual-browser QA was blocked by environment access/download failures; real-component search/open/source-link checks passed with the actual repository corpus, without new data/provider/auth mocks. No production demo records, credentials, model choices, aliases, or schema changed.
+- **Next:** Complete preview review and the existing automated security/approval checks for PR #90, then assess a real artifact's evidence → proposed bigger picture → unknowns → single next move before claiming runtime quality or production-live status. The North Star remains: preserve human intent so another intelligence can reconstruct, execute, verify, and continue it.
+
 
 ## Legacy Codex Vaughn UI/UX readiness — 2026-09-17
 
