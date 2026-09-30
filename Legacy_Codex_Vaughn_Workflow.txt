@@ -1,0 +1,26 @@
+Legacy Codex: Eddie's workflow demonstration for Vaughn
+App: https://legacy-codex.vercel.app/
+North Star: preserve rich human intent so another intelligence can reconstruct, execute, verify, and continue it.
+
+1. Open the app in Eddie's existing signed-in browser; keep the account/session that already holds his work.
+2. In Mission, inspect the existing Primary outcome, finish line, and saved action. Resume that action rather than creating a duplicate.
+3. Open Something changed / Project context. Record a real note explaining the larger outcome, current uncertainty, or connection the system should notice. Optionally include a public GitHub blob link to a real text file.
+4. Press Review project. This reads the selected mission, related outcomes, linked evidence, commitments/resumption notes, corrections, context notes and up to two explicitly linked repository files.
+5. Open Why this? Inspect the proposed bigger picture, evidence-to-action explanation, overlooked connection, self-check, unknowns, and cited excerpts. Ask Vaughn whether the interpretation matches the actual intent.
+6. If the recommendation misses the point, use Correct this, record the reason, and review again. Human corrections constrain later reasoning; an AI proposal is still a proposal.
+7. Accept a useful next move, explicitly save it only if needed, and verify the same action/note after reload. Show Vaughn from Eddie's session; opening the public app does not give a visitor Eddie's data or owner-only model access.
+
+The original Goose incident and cookbook-to-chef method remain in Codex > Root > North Star and in application model prompts. The two-pass review reconstructs then critiques; it does not autonomously edit or deploy its own code.
+
+Release evidence:
+PR: https://github.com/edwardemoryphotography/legacy-codex/pull/90
+Merged commit: 1dd38e0002d4f2b2aa4c8c4684eab9bce8af33b6
+Final reviewed branch commit: 3d182dffe5e1c55695a2242695dbfea50c8cecff
+Production project: frontend / prj_irrXhfz1elCLhO1Pdgd0ffM4wfz2
+Deployment: dpl_9kteRQwvf11k8rdyjpWrNCQcUZu6 (READY; canonical alias verified)
+Checks: 261/261 tests, TypeScript, normal build, lint 0 errors / 8 existing warnings, approval routing and security review passed.
+Runtime boundary: canonical page HTTP 200; unauthenticated review API HTTP 401.
+Review repairs: all linked evidence conflicts gate review; a completed project review suppresses same-mission narrow model proposals, including when no operation is grounded.
+
+
+Remaining check: live owner-authenticated provider output, correction/review/reload behavior and original-phone UI were not tested in this release because the execution/browser workspace was unavailable. Earlier saved-action production proof remains recorded separately; it does not prove this new review flow.
