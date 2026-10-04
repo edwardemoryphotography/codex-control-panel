@@ -4,10 +4,9 @@
  * match an entry here; the canonical workspace registry stays in the Foundry
  * `workspaces` table and is checked server-side at persist time.
  *
- * Every visibility below is labeled with its provenance. None of these
- * repositories has had its visibility verified against the GitHub API by
- * this code, so they stay "unknown" — and unknown visibility is treated as
- * NOT private when sensitivity rules are applied.
+ * Every visibility below is labeled with its provenance. Unknown visibility
+ * is treated as NOT private when sensitivity rules are applied. Only rows
+ * marked `verified` were checked against the GitHub API.
  */
 
 export type RepoVisibility = "private" | "public" | "unknown";
@@ -28,6 +27,7 @@ export const KNOWN_REPOSITORIES: KnownRepository[] = [
   { fullName: "edwardemoryphotography/camera-and-onject-detection-app-", visibility: "unknown", visibilityProvenance: "unknown" },
   { fullName: "edwardemoryphotography/-neurocreative-project", visibility: "unknown", visibilityProvenance: "unknown" },
   { fullName: "edwardemoryphotography/Artful-Intelligence", visibility: "unknown", visibilityProvenance: "unknown" },
+  { fullName: "edwardemoryphotography/artful-intelligence-hub", visibility: "public", visibilityProvenance: "verified" },
   { fullName: "edwardemoryphotography/plugins", visibility: "unknown", visibilityProvenance: "unknown" },
 ];
 
