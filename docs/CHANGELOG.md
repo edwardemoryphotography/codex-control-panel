@@ -2,6 +2,10 @@
 
 This file holds shipped history that was previously in `STATE.md`. `STATE.md` is now the current-state file only.
 
+## 2026-10-04
+
+- docs: Artful Intelligence and Artful Intelligence Hub now have separate canonical homes in `STATE.md` and the route registry. The hub repo visibility is `public` / `verified`. The storefront framework note is Next.js.
+
 ## 2026-08-11
 
 - fix: builds green + hardening — hub turbopack.root, /api/actions owner-gated, supabase cache doc, lint + test fixes, ci.yml; legacy npm install restores @testing-library; arch clean reinstall fixes vite rollup bug; verified 95+83 tests, all builds green

@@ -1,10 +1,16 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-10-04 (recommendation-quality draft and local verification; other entries retain their original dates)_
+_Last updated: 2026-10-04 (Artful Intelligence and Hub project homes; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
+
+## Artful Intelligence and Hub homes — 2026-10-04
+
+- **Organized:** The canonical Notion Projects row [Artful Intelligence](https://app.notion.com/p/39231487eed24253899285b7892bd9a8) was a blank page. It now records the storefront homes. [Artful Intelligence Hub](https://app.notion.com/p/3ef330f7bc3b81698f59c6c2ea7e02b1) is a separate Projects row. The intake page and the Artifact Engine Ecosystem Tracker row point at those homes and no longer hold status.
+- **Verified / bounds:** Vercel production identities and the public hub repo were read directly. Supabase `lsntynnmkvakmgngxplq` reported healthy and then timed out on SQL. `edwardemoryphotography/Artful-Intelligence` is the Vercel git source and returned 404 to this control-panel GitHub credential. Gumroad and Instagram were not rechecked. The webhook Vercel project is an orphan, not a third home.
+- **Next:** Buyer #1 stays the storefront next action. Do not promote hub preview `3b532e5` until the missing-RPC classification is checked on foundry-console.
 
 ## Legacy Codex recommendation quality — 2026-10-04
 
@@ -114,7 +120,8 @@ Where each project actually lives, so no agent edits a stale duplicate. Absorbed
 
 | Project | Canonical | Notes |
 |---|---|---|
-| Artful Intelligence | `~/Development/Artful-Intelligence` | Older copies archived under `~/Development/archive/` — do not edit those |
+| Artful Intelligence | GitHub `edwardemoryphotography/Artful-Intelligence` | Product storefront. Vercel `artful-intelligence` (`prj_NxOtPIdA833whnS4TvybcfWJNLqK`, Next.js). Production https://artful-intelligence.vercel.app is READY deployment `dpl_5Gi7rEXPCa8c5cAQ5ZnMB3yigpZM` at `main` `326afb3` (2026-10-02). Supabase `artful-intelligence` (`lsntynnmkvakmgngxplq`). Local `~/Development/Artful-Intelligence` is a working copy; older copies under `~/Development/archive/` stay archived. Notion status home is the Projects row [Artful Intelligence](https://app.notion.com/p/39231487eed24253899285b7892bd9a8). The control-panel GitHub credential returned 404 for the repo on 2026-10-04 even though Vercel deploys from it |
+| Artful Intelligence Hub | `https://github.com/edwardemoryphotography/artful-intelligence-hub` | Flock UI, not the storefront. Vercel `artful-intelligence-hub` (`prj_gXEYHWB7UCNm1E37Efrdtg8AzgCt`, Vite). Production https://artful-intelligence-hub.vercel.app is the 2026-09-05 redeploy `dpl_AuwtSAuGZKY3CwhnkJsoDSkQb2Ao` of `main` `7bc7ba3`. Preview `3b532e5` (2026-09-30) is READY and is not production. Reads foundry-console (`pkydkbuodikttfeawqsw`). Notion status home is [Artful Intelligence Hub](https://app.notion.com/p/3ef330f7bc3b81698f59c6c2ea7e02b1) |
 | Legacy Codex | `~/legacy-codex` | Production truth is `https://legacy-codex.vercel.app`; compare local tree to `origin/main` before assuming it matches production — a stale duplicate Vercel project (`edwardemory-photography-legacy-codex`) also exists and should be ignored |
 | Codex Control Panel | `~/Development/codex-control-panel` | This repo — reference implementation of the Standards Kit |
 | Codex System Architecture | `~/Development/codex-system-architecture` | Visual documentation SPA; separate Supabase project (`supabase-indigo-paddle`) from `legacy-codex`'s `foundry-console` (`pkydkbuodikttfeawqsw`) — do not assume shared tables |
@@ -138,8 +145,10 @@ Where each project actually lives, so no agent edits a stale duplicate. Absorbed
 |---|---|
 | GitHub | EdwardEmoryPhotography |
 | Vercel teamId | `team_vp0GcqRDdFkQQ3NRZU9NJ11O` |
-| Artful Intelligence project | `prj_NxOtPIdA833whnS4TvybcfWJNLqK` |
-| Artful Intelligence config | Static "Other" — files must be at repo root |
+| Artful Intelligence Vercel project | `prj_NxOtPIdA833whnS4TvybcfWJNLqK` — framework is Next.js as of 2026-10-04 (the old "Static Other" note is stale) |
+| Artful Intelligence Hub Vercel project | `prj_gXEYHWB7UCNm1E37Efrdtg8AzgCt` |
+| Artful Intelligence Supabase | `lsntynnmkvakmgngxplq` — not foundry-console |
+| Orphan, not a home | Vercel `artful-intelligence-webhook` (`prj_EG8KXHwSXJNVjqC9HMfiuiokhwy4`), last READY deploy 2026-05-15 |
 | Proven deploy path | GitHub Contents API via curl (fetch SHA → PUT with base64) |
 | Gumroad | `edwardemory.gumroad.com` |
 | Email | `pro@edwardemory.com` |
