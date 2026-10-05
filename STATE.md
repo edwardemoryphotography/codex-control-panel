@@ -1,10 +1,17 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
-_Last updated: 2026-10-04 (Resume repair merged, canonical deployment verified; other entries retain their original dates)_
+_Last updated: 2026-10-05 (Goose inheritance remediation; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
 
 ---
+
+## Goose inheritance remediation — 2026-10-05
+
+- **Legacy Codex:** [PR #109](https://github.com/edwardemoryphotography/legacy-codex/pull/109) closes missing lesson inheritance in analysis, brief, operation assistance and task handoffs. It selects up to 16 active scoped rules through paginated JWT/RLS reads with an eight-second failure budget, preserves full conditions/provenance, persists explicit idempotent token-only routing corrections in the transitional Mission ledger, and preserves stale evidence across repository/check-source outages without hiding successfully observed PR state. Final tested/published tree: `cbd6e3d4f701c4b036282351c155f51bb318beeb`. Merged as `264e4e2e22389a03eefa8c52d2a9dd62989fb983`; [production deployment](https://vercel.com/edwardemoryphotographys-projects/frontend/CUZm5cQizPn2fkVbV1HccNcjSERZ) is READY at that commit and owns https://legacy-codex.vercel.app/. After deployment, root returned HTTP 200 and unauthenticated routing/review-capability reads returned the expected HTTP 401. The deployment error/fatal query found no entries in its checked 30-minute window; these boundary observations do not prove owner workflows.
+- **Standalone Control Panel:** [PR #23](https://github.com/edwardemoryphotography/codex-control-panel/pull/23) merged as `e8a43a6dbda2671bc5e6aa103d52a54f25408d41`. Anthropic/OpenAI runtime prompts and generated tool handoffs now inherit public cognitive doctrine. [Production deployment](https://vercel.com/edwardemoryphotographys-projects/codex-control-panel/21kmAPt3iWcC4UF3DdrVzKzwsyCg) is READY at that commit and owns https://codex-control-panel-two.vercel.app/. Root returned HTTP 200; the deployment error/fatal query found no entries in its checked 30-minute window. These observations do not prove useful model behavior.
+- **Verification:** Legacy local suite 364/364 tests in 38 files, TypeScript/build pass, lint zero errors/eight existing warnings; Control Panel 98/98 tests in eight files, TypeScript/lint/build pass. Independent read-only reviews and hosted findings were reconciled. Isolated protocol tests and repository evidence are not real-account workflow proof.
+- **Remaining / owner proof:** Real-account pagination, lesson retirement propagation, durable correction retry/restoration across devices, asynchronous account changes, useful reasoning and original-iPhone behavior remain unverified. Use genuine existing missions and the existing production identity; do not create demonstration records or transfer anonymous identity to previews. Mission events remain transitional; canonical Foundry routing/evidence ownership and the unresolved verified workspace/account link are unchanged. No credentials, models, allowlists, schema, production records or aliases were changed.
 
 ## Legacy Codex recommendation quality and Resume repair — 2026-10-04
 
