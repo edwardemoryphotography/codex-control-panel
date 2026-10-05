@@ -1,3 +1,5 @@
+import { buildPrompt } from '../routing'
+import { COGNITIVE_DOCTRINE, LEGACY_CODEX_NORTH_STAR } from '../cognitiveDoctrine'
 import { describe, it, expect } from 'vitest'
 import {
   buildResult,
@@ -252,5 +254,13 @@ describe('applyCorrection', () => {
     expect(applyCorrection('workshop', 'documentation', 'documentation', before)).toBe(
       before,
     )
+  })
+})
+
+describe('Goose handoff inheritance', () => {
+  it('keeps public doctrine in every prepared tool handoff', () => {
+    for (const tool of ['Gemini', 'Perplexity', 'Claude / ChatGPT', 'Vercel + GitHub', 'Notion', 'Codex KG']) {
+      expect(buildPrompt(tool, LEGACY_CODEX_NORTH_STAR, 'architecture', { currentTool: 'Codex', priority: 'balanced' })).toContain(COGNITIVE_DOCTRINE)
+    }
   })
 })
