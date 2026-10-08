@@ -1,5 +1,12 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
+## Legacy Codex inactive Mission recovery — 2026-10-07
+
+- **Implemented / in review:** [Legacy Codex PR #113](https://github.com/edwardemoryphotography/legacy-codex/pull/113), head `408f3a11d829046e1d9d06e35e15473bd6948e10`, repairs the original-iPhone saved-but-inactive dead end. Strategic Delta says “No active mission,” exposes paused/abandoned/parked/candidate/blocked missions for explicit Primary selection, and offers a new Primary outcome form. A missing finish line is saved first; promotion retains the same mission ID, blockers and capacity reports. Completed missions remain history. No action is created implicitly.
+- **Verification / release status:** Local production build, TypeScript and existing regression checks (386/386) passed; touched-file lint has 0 errors and 2 existing warnings. The PR is open; CI, approval/security reviews and preview deployments were pending at this record. Not merged or production deployed. No synthetic application/production records were created.
+- **Runtime gap / next:** The original owner iPhone recovery is unverified. No owner browser tab was available; opening the canonical site was blocked with `net::ERR_BLOCKED_BY_CLIENT`. This is unavailable evidence, not evidence of product failure. After reviewed release, Eddie selects his existing mission, supplies a finish line only if missing, makes it Primary and reloads. Finish when the same mission persists as Primary without a duplicate, and the next-move card never says “Nothing captured yet” while saved missions exist.
+
+
 _Last updated: 2026-10-05 (Goose inheritance remediation; other entries retain their original dates)_
 
 **This is the canonical cross-project state file** (Master Charter §8, as of Standards Kit 2.1.0). Full history is now in `docs/CHANGELOG.md`. `legacy-codex` keeps only a short pointer plus repo-local-only notes. If you're working in a satellite repo, update the state here, not in a local copy.
