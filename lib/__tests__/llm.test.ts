@@ -1,9 +1,11 @@
+import { COGNITIVE_DOCTRINE, LEGACY_CODEX_NORTH_STAR } from '../cognitiveDoctrine'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
   providerOrder,
   configuredModel,
   keyDiagnostics,
   isAuthFailure,
+  callLlm,
 } from '../llm'
 
 describe('providerOrder (provider policy, separate from failover)', () => {
@@ -101,5 +103,24 @@ describe('isAuthFailure', () => {
   it('does not flag unrelated failures', () => {
     expect(isAuthFailure('anthropic: Anthropic 529: overloaded')).toBe(false)
     expect(isAuthFailure('openai: fetch failed (timeout)')).toBe(false)
+  })
+})
+
+// Packet inspection only. We deliberately fail before provider output, so
+// these assertions make no claim about live model behavior or saved data.
+describe('Goose runtime inheritance', () => {
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
+  it.each(['anthropic', 'openai'] as const)('sends doctrine to %s for structured and free text work', async provider => {
+    vi.stubEnv('ANTHROPIC_API_KEY', provider === 'anthropic' ? 'unit-request-only' : '')
+    vi.stubEnv('OPENAI_API_KEY', provider === 'openai' ? 'unit-request-only' : '')
+    vi.stubEnv('LLM_GENERATE_ORDER', provider)
+    const request = vi.fn().mockRejectedValue(new Error('Stop before provider output'))
+    vi.stubGlobal('fetch', request)
+    for (const schema of [undefined, { name: 'inspect_packet', schema: { type: 'object', properties: {} } }]) {
+      await expect(callLlm(LEGACY_CODEX_NORTH_STAR, { schema })).rejects.toThrow()
+      const body = JSON.parse(request.mock.calls.at(-1)![1].body)
+      if (provider === 'anthropic') expect(body.system).toBe(COGNITIVE_DOCTRINE)
+      else expect(body.messages[0]).toEqual({ role: 'system', content: COGNITIVE_DOCTRINE })
+    }
   })
 })

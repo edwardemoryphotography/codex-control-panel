@@ -58,3 +58,16 @@ Status: implemented and locally verified; publication/merge evidence lives in th
 Evidence: 95 tests; lint, TypeScript and build passed; document consistency and preservation review passed. Legacy Codex PR: https://github.com/edwardemoryphotography/legacy-codex/pull/82 . Shared-standard branch: https://github.com/edwardemoryphotography/codex-control-panel/tree/codex/current-intent-authority .
 Gaps: no new product decision needed. Deployment/runtime stages are not applicable to these documentation changes.
 Next: integrate both reviewed changes through repository gates; future agents follow current explicit intent.
+
+---
+### [2026-10-14 UTC / 2026-10-13 PDT] AGENT: Codex — CLAIM / continuation
+Branch: codex/current-intent-authority · PR: https://github.com/edwardemoryphotography/codex-control-panel/pull/21
+Scope: Eddie requested “Finish 21”; reconcile the existing instruction-only change with current main, preserve newer release records, verify and merge through repository gates.
+Status: implementing — prior branch inspected; no competing PR or shared-history rewrite.
+
+### [2026-10-14 UTC / 2026-10-13 PDT] AGENT: Codex — RELEASE
+Scope: shared instruction reconciliation; only the existing 13 documentation/version files change relative to current main.
+Status: reconciled and document-reviewed; GitHub PR #21 owns the final CI and merge evidence.
+Evidence: preserved current main's post-September release/runtime records; checked active instruction consistency, retained historical provenance, and verified the proposed tree changes no application files. The original 95-test result above remains historical; current CI results belong to this continuation's head.
+Gaps: instruction-only completion does not prove original-iPhone recovery or autonomous inheritance; application deployment/runtime stages are not applicable.
+Next: complete current hosted CI and merge PR #21; future agents verify adoption across all affected instruction owners.

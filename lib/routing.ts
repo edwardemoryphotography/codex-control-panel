@@ -1,3 +1,5 @@
+import { COGNITIVE_DOCTRINE } from "./cognitiveDoctrine";
+
 export type RouteKey =
   | "execution"
   | "research"
@@ -402,6 +404,7 @@ export function buildPrompt(
   const route = routeByTool[tool] ?? routeByKey.architecture;
   return [
     route.role,
+    COGNITIVE_DOCTRINE,
     doctrineBlock,
     `Current tool context: ${ctx.currentTool}`,
     `Detected category: ${category}`,

@@ -1,3 +1,5 @@
+import { COGNITIVE_DOCTRINE } from "./cognitiveDoctrine";
+
 export type LlmProvider = "anthropic" | "openai";
 
 /**
@@ -282,6 +284,7 @@ async function callAnthropic(
     body: JSON.stringify({
       model,
       max_tokens: options.maxTokens ?? 1000,
+      system: COGNITIVE_DOCTRINE,
       messages: [{ role: "user", content: prompt }],
       ...structured,
     }),
@@ -357,7 +360,7 @@ async function callOpenAi(
     body: JSON.stringify({
       model,
       max_completion_tokens: options.maxTokens ?? 1000,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "system", content: COGNITIVE_DOCTRINE }, { role: "user", content: prompt }],
       ...structured,
     }),
   });

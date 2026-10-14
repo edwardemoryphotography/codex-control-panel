@@ -1,6 +1,8 @@
 # Legacy Codex Standards Kit — Changelog
 
-## 2.2.0 — 2026-09-08
+## 2.2.0 — 2026-09-08 (implementation; integration resumed 2026-10-13)
+
+- PR #21 was still unmerged when Legacy Codex PR #82's retirement was already active. Reconciled the shared change with the October main baseline; removed the obsolete freeze from active STATE guidance while retaining the dated history below. See PR #21 for merge/CI evidence. Historical entries are provenance, not current instructions.
 
 - Eddie explicitly requested retirement of redundant permission gates. Current user intent now governs reversible coding work; specific authorization still bounds destructive, irreversible, financial, and credential actions. Platform protections remain binding.
 - Reconciled AGENT-BEHAVIOR, MASTER-CHARTER, inventory, handoff, run cards, and SUPERPROMPT. Removed mandatory inventory reapproval, blanket app freezes, and tool-name implementation/release restrictions.
