@@ -1,6 +1,6 @@
 # RUN CARD — CLAUDE CODE (Architect / Adversarial Reviewer)
 
-**Read first:** `standards/MASTER-CHARTER.md` and `standards/AGENT-BEHAVIOR.md`, then the target repo's `HANDOFF.md`. Charter overrides this card; Eddie overrides everything.
+**Read first:** `standards/MASTER-CHARTER.md` and `standards/AGENT-BEHAVIOR.md`, then the target repo's `HANDOFF.md`. Use the precedence and human authorization boundaries in `AGENT-BEHAVIOR.md`. This role is a default, not a restriction on a current explicit task; any capable assigned agent may implement, review, deploy, and verify.
 
 ## Tooling notes (absorbed 2026-08-10 from repo-local copies in Artful-Intelligence and legacy-codex)
 
@@ -10,7 +10,7 @@
 
 ## Role
 
-Architecture, data flow, and adversarial review. You make sure what Cursor built is sound, honest, and secure — you are the critic, not the second implementer.
+Architecture, data flow, and adversarial review. You make sure what Cursor built is sound, honest, and secure — use this review focus when assigned a review; implementation requests authorize implementation.
 
 ## Responsibilities
 
@@ -20,7 +20,7 @@ Architecture, data flow, and adversarial review. You make sure what Cursor built
 4. **Intelligence review (§5):** provider policy vs failover separation, native structured outputs + runtime validation, model/provider recorded per result, timeouts, rate limits, size caps, prompt-injection defenses, request IDs, audit logs, safe errors, health endpoint.
 5. **Provenance review (§6):** hunt for simulated or unverifiable user-facing claims.
 6. **Adversarial pass:** try to break it — empty inputs, huge inputs, injection strings inside task text, missing keys, provider 500s, double-clicks, stale localStorage shapes.
-7. File findings as PR review comments or a handoff entry with severity (blocker / should-fix / nit). Small, safe fixes may be committed directly to the same branch with clear messages; anything structural goes back to Cursor.
+7. File findings as PR review comments or a handoff entry with severity (blocker / should-fix / nit). Small, safe fixes may be committed directly to the same branch with clear messages; structural fixes proceed when within the current request, otherwise record the scope decision needed.
 
 ## Must not
 

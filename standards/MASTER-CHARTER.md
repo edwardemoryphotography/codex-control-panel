@@ -1,7 +1,7 @@
 # LEGACY CODEX — MASTER CHARTER
 
-**Standards Kit version: 2.1.0** · Canonical home: `codex-control-panel/standards/` (until extracted to its own package)
-**Precedence:** Eddie's explicit instructions > this charter > `standards/AGENT-BEHAVIOR.md` (baseline agent conduct) > run cards > anything else. Agents read this charter, `AGENT-BEHAVIOR.md`, and their run card before touching any repository.
+**Standards Kit version: 2.2.0** · Canonical home: `codex-control-panel/standards/` (until extracted to its own package)
+**Precedence:** CURRENT USER INTENT HAS AUTHORITY. Eddie's current explicit instructions > target-repo `AGENTS.md` (and delegated `CLAUDE.md` facts) > applicable charter sections and `standards/AGENT-BEHAVIOR.md` > run cards/tool pointers. Platform/system requirements and access controls remain binding. The shared behavior standard owns autonomy and human authorization boundaries; historical records and coordination defaults cannot override an explicitly authorized task. Read relevant guidance before modifying its scope.
 
 **Adoption is not automatic.** A repo listed in §1 is only bound by the *sections it actually implements*. §4 (Liquid Intelligence design tokens) and §3/§5 (AI task lifecycle) apply only to repos that build that product surface — as of 2.1.0, that's `codex-control-panel` alone. `legacy-codex` and `codex-system-architecture` are named in §1 for coordination/handoff purposes (§9–10) but run their own established designs and are not expected to restyle to match §4, nor to retrofit an AI task lifecycle they don't have. A repo's own pointer file states which sections bind it.
 
@@ -13,7 +13,7 @@ Every Legacy Codex property: `codex-control-panel`, `legacy-codex`, `codex-syste
 
 ## 2. Product definition comes before code
 
-No repository receives features — AI or otherwise — until its `PRODUCT.md` (or README section) answers:
+Before feature work, use the existing `PRODUCT.md` (or README section) and repository evidence to answer the following. Fill routine documentation gaps within the task; ask only for a materially unresolved product decision:
 
 1. **User** — who actually uses this?
 2. **Primary job** — the single job it must do well.
@@ -108,26 +108,28 @@ Next.js App Router + TypeScript strict. `npm run lint` (0 errors), `npm test` (c
 
 ## 9. Process: discovery before modification
 
-**Phase 0 — Read the handoff.** Open the repo's `HANDOFF.md` (see Handoff Contract) before doing anything.
+Discovery is proportional to the current task. An explicit bounded task authorizes its necessary reversible changes without a separate inventory approval. The phases below also support broader ecosystem migrations; they do not require restarting discovery or reopening completed work for every repair.
 
-**Phase 1 — Ecosystem inventory (read-only).** Before any repository is edited, produce the evidence-backed inventory using `INVENTORY-TEMPLATE.md` (repository, relationship, product role, current state, data source, deployment, risks, migration priority). **No repository is modified until Eddie approves the inventory.**
+**Phase 0 — Read the handoff.** Read available relevant handoff/state evidence before editing. A missing handoff is a documentation gap to fill within scope, not a reason to stop.
 
-**Phase 2 — Migration plan.** An approved ordered list: which repos get worked now, later, archived, or merged, and the shared-system strategy.
+**Phase 1 — Inventory.** Reuse current evidence and inspect the affected repositories. Use `INVENTORY-TEMPLATE.md` for ecosystem-wide discovery when relevant. If Eddie requests only a read-only inventory, stay read-only; an implementation request already authorizes its necessary discovery and reversible changes.
 
-**Phase 3 — Implementation.** One agent modifies a repository at a time, on its own branch, with PR ownership recorded in the handoff.
+**Phase 2 — Plan.** Record the smallest sufficient path to the requested outcome. Obtain only missing material product decisions or specific authorization for destructive, irreversible, financial, or sensitive actions under `AGENT-BEHAVIOR.md`; do not seek redundant approval of a plan already within scope.
 
-**Phase 4 — Verification and reconciliation.** Independent verification against §10, recorded with evidence.
+**Phase 3 — Implementation.** Follow `HANDOFF-CONTRACT.md` to avoid overlapping edits and preserve branch ownership. Tool roles are defaults; any capable assigned agent can implement, review, deploy, and verify its authorized task.
+
+**Phase 4 — Verification and reconciliation.** Check the result against evidence and applicable §10 stages. Independent review is useful where available or required by repository protections; do not invent a mandatory second-agent handoff. Continue through the requested finish line.
 
 ## 10. Definition of SHIPPED (a PR is not shipped)
 
-"PR opened" and "passes locally" are progress, not completion. A change is **shipped** only when all of the following are true, with evidence recorded in the handoff:
+"PR opened" and "passes locally" are progress, not completion. Track **Merged → Deployed → Runtime Verified → Live** separately. For application releases, satisfy the applicable stages below with evidence in the handoff. For instruction-only changes, verify the documents and repository gates and report merge status; deployment/runtime/provider stages are not applicable. Never claim application behavior was verified by a documentation change.
 
 1. PR reviewed and **merged**.
 2. Required environment variables configured in the deployment platform.
 3. A **new deployment** created from the merged commit.
 4. The **live deployment** tested — primary flow exercised with real input.
 5. AI provider badge/metadata confirmed live (proving real AI is active, not just the local fallback below the fold).
-6. Fallback path **deliberately** tested (e.g. temporarily unset key or simulate failure).
+6. Applicable fallback/error paths verified safely in an isolated environment; do not unset production keys, fabricate user data, or induce production failures for verification.
 7. Production logs checked for errors.
 
-Report status honestly: "implemented, PR open, not yet shipped" is the correct phrasing until all seven hold.
+Report completed stages and genuine gaps honestly. Do not require unrelated runtime checks for documentation-only work or stop before deployment/runtime verification when those are part of the requested outcome.
