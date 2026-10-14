@@ -1,6 +1,6 @@
 # HANDOFF — codex-control-panel
 
-Governed by `standards/HANDOFF-CONTRACT.md` · Standards Kit version: 2.1.0
+Governed by `standards/HANDOFF-CONTRACT.md` · Standards Kit version: 2.2.0
 This repository is the **reference implementation** of the Liquid Intelligence standard.
 
 ---
@@ -71,3 +71,5 @@ Status: reconciled and document-reviewed; GitHub PR #21 owns the final CI and me
 Evidence: preserved current main's post-September release/runtime records; checked active instruction consistency, retained historical provenance, and verified the proposed tree changes no application files. The original 95-test result above remains historical; current CI results belong to this continuation's head.
 Gaps: instruction-only completion does not prove original-iPhone recovery or autonomous inheritance; application deployment/runtime stages are not applicable.
 Next: complete current hosted CI and merge PR #21; future agents verify adoption across all affected instruction owners.
+
+Review follow-through: corrected both September review findings before merge: stale claims require no new handoff entries AND no newer branch activity; the current handoff header now agrees with Standards Kit 2.2.0. Historical handoff entries retain their original versions and evidence.
