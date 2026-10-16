@@ -1,5 +1,18 @@
 # STATE.md — Edward Emory Photography / Artful Intelligence
 
+## Legacy Codex structural reconstruction and transfer measurement — 2026-10-16
+
+- **Merged:** [PR #116](https://github.com/edwardemoryphotography/legacy-codex/pull/116), squash `56a386f9a221c27534f8cf1f04a42bb376f0a488`. Existing interface, voice, navigation, explicit saves, ownership, model access and two-call review architecture preserved.
+- **Mechanism:** Bounded same-account lesson/correction-origin reads no longer require shared vocabulary. Structural bridges validate exact excerpts and server project provenance. Reviews retain a lesson-withheld baseline, final choice, changed fields and explicit `human_intervention_required`. Full intervention counts are independent of prompt clipping and participate in cache validity. All automatic inheritance classifications stay **Unknown**; changed text is never successful transfer.
+- **Deployed / live code:** Canonical frontend [deployment](https://vercel.com/edwardemoryphotographys-projects/frontend/C6Ao13GbEoMhxsSWygJEwPCvahQv) is READY. Canonical-domain lookup confirms https://legacy-codex.vercel.app serves the exact merged commit, with no alias error. Deployment readiness does not establish model or user-workflow success.
+- **Actual evidence:** Read-only audit/replay of 30 real missions found two correction rows in two separate accounts, zero confirmed lessons and zero completed project reviews. No target has a correction in another same-account project. No synthetic missions, confirmations or outcome evidence were created. The audited corpus cannot establish successful structural transfer.
+- **Verification:** Hosted lint, TypeScript, 397 tests in 40 files and production build passed on reviewed head `714323c9` ([CI](https://github.com/edwardemoryphotography/legacy-codex/actions/runs/38844378706)); independent reviewer found no blockers after three fixes. Required approval/security checks passed. These establish regression gates, not cognition quality.
+- **REA:** Evaluated primary morluto/rea documentation. Not installed: source/binary inspection is not the missing capability here. Reconsider only for a concrete software-investigation gap, separate from the general cognitive engine.
+- **Runtime / user workflow:** Production browser access remains blocked by `ERR_BLOCKED_BY_CLIENT`; no authenticated model output, objective → useful next action → explicit save → reload → resume result was observed. Actual confirmed-lesson transfer remains unproven.
+- **Next / inherited lesson:** Evaluate a real later same-account reconstruction against a genuinely human-confirmed prior lesson and independently observed outcome, without teaching the lesson again. Never infer absence of human intervention from a bounded prompt; never promote a source quote or changed model answer into verified inheritance.
+- **Audit:** [Source, findings, implementation and limits](https://github.com/edwardemoryphotography/legacy-codex/blob/main/docs/verification/structural-transfer-2026-10-16.md).
+
+
 ## Legacy Codex useful Mission assistance — 2026-10-15
 
 - **Merged / deployed:** [PR #115](https://github.com/edwardemoryphotography/legacy-codex/pull/115) merged as `c8ce21a6d3647d137eb5b8ef8e6c4b92fd1aaa1d`. Canonical `frontend` [deployment](https://vercel.com/edwardemoryphotographys-projects/frontend/4U6SdJg4LgHApb5UPvhNZU3XEvrQ) is READY; hostname lookup confirms https://legacy-codex.vercel.app serves this commit, with no alias error.
